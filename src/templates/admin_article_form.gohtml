@@ -1,0 +1,162 @@
+{{template "base.gohtml" .}}
+
+{{define "title"}}{{if .IsEdit}}Edit Article{{else}}Add New Article{{end}} - Admin Dashboard{{end}}
+
+{{define "content"}}
+<div class="flex min-h-screen bg-gray-100">
+    <!-- Sidebar (same as admin.gohtml) -->
+    <aside class="w-64 bg-gray-800 text-white p-6 shadow-lg">
+        <div class="text-2xl font-bold mb-8 text-indigo-400">Admin Panel</div>
+        <nav>
+            <ul>
+                <li class="mb-4">
+                    <a href="/admin" class="flex items-center text-gray-300 hover:text-white hover:bg-gray-700 p-3 rounded-md transition-colors duration-200">
+                        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+                        Dashboard
+                    </a>
+                </li>
+                <li class="mb-4">
+                    <a href="/admin/articles" class="flex items-center text-gray-300 hover:text-white hover:bg-gray-700 p-3 rounded-md transition-colors duration-200">
+                        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                        Articles
+                    </a>
+                </li>
+                <li class="mb-4">
+                    <a href="/admin/users" class="flex items-center text-gray-300 hover:text-white hover:bg-gray-700 p-3 rounded-md transition-colors duration-200">
+                        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.653-.146-1.283-.423-1.848M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.653.146-1.283.423-1.848m0 0A7.962 7.962 0 0112 14c.647 0 1.276.088 1.884.248M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                        Users
+                    </a>
+                </li>
+                <!-- Add more admin links here -->
+            </ul>
+        </nav>
+    </aside>
+
+    <!-- Main Content Area -->
+    <div class="flex-1 p-10">
+        <h1 class="text-4xl font-extrabold text-gray-900 mb-8">{{if .IsEdit}}Edit Article{{else}}Add New Article{{end}}</h1>
+        
+        {{if .Error}}
+        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-6" role="alert">
+            <strong class="font-bold">Error!</strong>
+            <span class="block sm:inline">{{.Error}}</span>
+        </div>
+        {{end}}
+
+        <div class="bg-white p-8 rounded-lg shadow-md">
+            <form action="{{.Action}}" method="POST">
+                {{if .IsEdit}}
+                <input type="hidden" name="id" value="{{.Article.ID}}">
+                {{end}}
+                <div class="mb-6">
+                    <label for="slug" class="block text-gray-700 text-sm font-bold mb-2">Slug (Date as YYYY-MM-DD):</label>
+                    <input type="text" id="slug" name="slug" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" pattern="\d{4}-\d{2}-\d{2}" placeholder="YYYY-MM-DD" value="{{.Article.Slug}}" required>
+                    <p class="text-gray-600 text-xs italic mt-1">Must be in YYYY-MM-DD format.</p>
+                </div>
+                <div class="mb-6">
+                    <label for="title" class="block text-gray-700 text-sm font-bold mb-2">Title:</label>
+                    <input type="text" id="title" name="title" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" value="{{.Article.Title}}" required>
+                </div>
+                <div class="mb-6">
+                    <label for="summary" class="block text-gray-700 text-sm font-bold mb-2">Summary:</label>
+                    <textarea id="summary" name="summary" rows="4" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>{{.Article.Summary.String}}</textarea>
+                </div>
+                <div class="mb-6">
+                    <label for="created_at" class="block text-gray-700 text-sm font-bold mb-2">Created Date (YYYY-MM-DD):</label>
+                    <input type="date" id="created_at" name="created_at" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" value="{{if .IsEdit}}{{.Article.CreatedAt}}{{else}}{{.CurrentDate}}{{end}}" required>
+                </div>
+
+                <hr class="my-8">
+
+                <h2 class="text-2xl font-semibold text-gray-800 mb-4">Morning Session</h2>
+                <div class="mb-6">
+                    <label for="morning_open_index" class="block text-gray-700 text-sm font-bold mb-2">Open Index:</label>
+                    <input type="text" id="morning_open_index" name="morning_open_index" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" value="{{.MorningOpenIndex}}">
+                </div>
+                <div class="mb-6">
+                    <label for="morning_open_change" class="block text-gray-700 text-sm font-bold mb-2">Open Change:</label>
+                    <input type="number" step="0.01" id="morning_open_change" name="morning_open_change" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" value="{{.MorningOpenChange}}">
+                </div>
+                <div class="mb-6">
+                    <label for="morning_open_highlights" class="block text-gray-700 text-sm font-bold mb-2">Open Highlights:</label>
+                    <input type="text" id="morning_open_highlights" name="morning_open_highlights" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" value="{{.MorningOpenHighlights}}">
+                </div>
+                <div class="mb-6">
+                    <label for="morning_open_analysis" class="block text-gray-700 text-sm font-bold mb-2">Open Analysis:</label>
+                    <textarea id="morning_open_analysis" name="morning_open_analysis" rows="6" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">{{.MorningOpenAnalysis}}</textarea>
+                </div>
+                <div class="mb-6">
+                    <label for="morning_close_index" class="block text-gray-700 text-sm font-bold mb-2">Close Index:</label>
+                    <input type="text" id="morning_close_index" name="morning_close_index" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" value="{{.MorningCloseIndex}}">
+                </div>
+                <div class="mb-6">
+                    <label for="morning_close_change" class="block text-gray-700 text-sm font-bold mb-2">Close Change:</label>
+                    <input type="number" step="0.01" id="morning_close_change" name="morning_close_change" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" value="{{.MorningCloseChange}}">
+                </div>
+                <div class="mb-6">
+                    <label for="morning_close_highlights" class="block text-gray-700 text-sm font-bold mb-2">Close Highlights:</label>
+                    <input type="text" id="morning_close_highlights" name="morning_close_highlights" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" value="{{.MorningCloseHighlights}}">
+                </div>
+                <div class="mb-6">
+                    <label for="morning_close_summary" class="block text-gray-700 text-sm font-bold mb-2">Close Summary:</label>
+                    <textarea id="morning_close_summary" name="morning_close_summary" rows="6" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">{{.MorningCloseSummary}}</textarea>
+                </div>
+
+                <hr class="my-8">
+
+                <h2 class="text-2xl font-semibold text-gray-800 mb-4">Afternoon Session</h2>
+                <div class="mb-6">
+                    <label for="afternoon_open_index" class="block text-gray-700 text-sm font-bold mb-2">Open Index:</label>
+                    <input type="text" id="afternoon_open_index" name="afternoon_open_index" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" value="{{.AfternoonOpenIndex}}">
+                </div>
+                <div class="mb-6">
+                    <label for="afternoon_open_change" class="block text-gray-700 text-sm font-bold mb-2">Open Change:</label>
+                    <input type="number" step="0.01" id="afternoon_open_change" name="afternoon_open_change" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" value="{{.AfternoonOpenChange}}">
+                </div>
+                <div class="mb-6">
+                    <label for="afternoon_open_highlights" class="block text-gray-700 text-sm font-bold mb-2">Open Highlights:</label>
+                    <input type="text" id="afternoon_open_highlights" name="afternoon_open_highlights" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" value="{{.AfternoonOpenHighlights}}">
+                </div>
+                <div class="mb-6">
+                    <label for="afternoon_open_analysis" class="block text-gray-700 text-sm font-bold mb-2">Open Analysis:</label>
+                    <textarea id="afternoon_open_analysis" name="afternoon_open_analysis" rows="6" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">{{.AfternoonOpenAnalysis}}</textarea>
+                </div>
+                <div class="mb-6">
+                    <label for="afternoon_close_index" class="block text-gray-700 text-sm font-bold mb-2">Close Index:</label>
+                    <input type="text" id="afternoon_close_index" name="afternoon_close_index" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" value="{{.AfternoonCloseIndex}}">
+                </div>
+                <div class="mb-6">
+                    <label for="afternoon_close_change" class="block text-gray-700 text-sm font-bold mb-2">Close Change:</label>
+                    <input type="number" step="0.01" id="afternoon_close_change" name="afternoon_close_change" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" value="{{.AfternoonCloseChange}}">
+                </div>
+                <div class="mb-6">
+                    <label for="afternoon_close_highlights" class="block text-gray-700 text-sm font-bold mb-2">Close Highlights:</label>
+                    <input type="text" id="afternoon_close_highlights" name="afternoon_close_highlights" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" value="{{.AfternoonCloseHighlights}}">
+                </div>
+                <div class="mb-6">
+                    <label for="afternoon_close_summary" class="block text-gray-700 text-sm font-bold mb-2">Close Summary:</label>
+                    <textarea id="afternoon_close_summary" name="afternoon_close_summary" rows="6" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">{{.AfternoonCloseSummary}}</textarea>
+                </div>
+
+                <hr class="my-8">
+
+                <h2 class="text-2xl font-semibold text-gray-800 mb-4">Key Takeaways</h2>
+                <div class="mb-6">
+                    <label for="key_takeaways" class="block text-gray-700 text-sm font-bold mb-2">Key Takeaways (comma-separated):</label>
+                    <textarea id="key_takeaways" name="key_takeaways" rows="4" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">{{.KeyTakeaways}}</textarea>
+                    <p class="text-gray-600 text-xs italic mt-1">Enter each takeaway separated by a comma.</p>
+                </div>
+
+                <div class="flex items-center justify-between">
+                    <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-md focus:outline-none focus:shadow-outline transition-colors duration-200">
+                        {{if .IsEdit}}Update Article{{else}}Add Article{{end}}
+                    </button>
+                    <a href="/admin" class="inline-block align-baseline font-bold text-sm text-indigo-600 hover:text-indigo-800">
+                        Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{{end}}

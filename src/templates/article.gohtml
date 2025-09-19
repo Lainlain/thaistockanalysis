@@ -1,0 +1,213 @@
+{{template "base.gohtml" .}}
+
+{{define "title"}}{{.CurrentDate}} - Thai Stock Market Analysis{{end}}
+{{define "description"}}In-depth analysis of the Thai stock market for {{.CurrentDate}}, covering morning and afternoon sessions, key index movements, and expert investment takeaways.{{end}}
+{{define "og_title"}}{{.CurrentDate}} - Thai Stock Market Analysis{{end}}
+{{define "og_description"}}In-depth analysis of the Thai stock market for {{.CurrentDate}}, covering key index movements and expert investment takeaways.{{end}}
+
+{{define "content"}}
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+    <!-- Main Article Content -->
+    <article class="lg:col-span-9 bg-white rounded-2xl shadow-lg overflow-hidden p-6 sm:p-8 md:p-10 border border-gray-100">
+        <header class="mb-8">
+            <div class="flex items-center justify-between mb-4">
+                <a href="/articles" class="text-sm font-medium text-primary-600 hover:text-primary-700 transition-colors duration-200">
+                    &larr; Back to Market Analysis
+                </a>
+                <time class="text-sm text-gray-500">{{.CurrentDate}}</time>
+            </div>
+            <h1 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-gray-900 mb-4 leading-tight">
+                Daily Market Analysis: {{.CurrentDate}}
+            </h1>
+            <p class="text-lg text-gray-600">
+                A detailed breakdown of the Thai stock market's performance, including key index movements and sector highlights.
+            </p>
+        </header>
+        
+        <!-- AdSense Ad - Top of Article -->
+        <div class="my-8 text-center bg-gray-50 p-4 rounded-lg border border-gray-200">
+            <p class="text-xs text-gray-400 uppercase tracking-wider mb-2">Advertisement</p>
+            <div class="bg-gray-200 h-24 sm:h-32 flex items-center justify-center text-gray-500 rounded-md">
+                <!-- AdSense ad code will be placed here -->
+                Ad Unit (Top)
+            </div>
+        </div>
+
+        <!-- Morning Session -->
+        <section class="mb-10 p-6 bg-blue-50 rounded-xl border border-blue-100">
+            <h2 class="text-2xl font-bold text-primary-800 mb-6 flex items-center">
+                <svg class="w-7 h-7 mr-3 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h1M3 12H2m15.325-4.775l.707-.707M5.636 18.364l-.707.707M18.364 5.636l.707-.707M5.636 5.636l-.707-.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
+                </svg>
+                Morning Session
+            </h2>
+            
+            <div class="grid md:grid-cols-2 gap-6 mb-6">
+                <!-- Open Set -->
+                <div class="bg-white p-5 rounded-lg shadow-sm border border-gray-200">
+                    <h3 class="text-lg font-semibold text-gray-700 mb-3">Open Set</h3>
+                    <div class="flex items-baseline mb-2">
+                        <p class="text-2xl font-bold {{if gt .MorningOpenChange 0.0}}text-success-600{{else if lt .MorningOpenChange 0.0}}text-danger-600{{else}}text-gray-800{{end}}">{{.MorningOpenIndex}}</p>
+                        <span class="ml-2 text-base font-medium {{if gt .MorningOpenChange 0.0}}text-success-500{{else if lt .MorningOpenChange 0.0}}text-danger-500{{else}}text-gray-600{{end}}">
+                            ({{if gt .MorningOpenChange 0.0}}+{{end}}{{.MorningOpenChange}})
+                        </span>
+                    </div>
+                    {{if .MorningOpenHighlights}}
+                    <p class="text-sm text-gray-600 mt-2"><strong>Highlights:</strong> {{.MorningOpenHighlights}}</p>
+                    {{end}}
+                </div>
+                
+                <!-- Close Set -->
+                <div class="bg-white p-5 rounded-lg shadow-sm border border-gray-200">
+                    <h3 class="text-lg font-semibold text-gray-700 mb-3">Close Set</h3>
+                    <div class="flex items-baseline mb-2">
+                        <p class="text-2xl font-bold {{if gt .MorningCloseChange 0.0}}text-success-600{{else if lt .MorningCloseChange 0.0}}text-danger-600{{else}}text-gray-800{{end}}">{{.MorningCloseIndex}}</p>
+                        <span class="ml-2 text-base font-medium {{if gt .MorningCloseChange 0.0}}text-success-500{{else if lt .MorningCloseChange 0.0}}text-danger-500{{else}}text-gray-600{{end}}">
+                            ({{if gt .MorningCloseChange 0.0}}+{{end}}{{.MorningCloseChange}})
+                        </span>
+                    </div>
+                    {{if .MorningCloseHighlights}}
+                    <p class="text-sm text-gray-600 mt-2"><strong>Highlights:</strong> {{.MorningCloseHighlights}}</p>
+                    {{end}}
+                </div>
+            </div>
+            
+            <div class="prose prose-lg max-w-none text-gray-700 leading-relaxed">
+                <h4 class="text-lg font-semibold text-primary-700 mb-2">Analysis:</h4>
+                {{.MorningOpenAnalysis}}
+                <h4 class="text-lg font-semibold text-primary-700 mb-2 mt-6">Summary:</h4>
+                {{.MorningCloseSummary}}
+            </div>
+        </section>
+
+        <!-- AdSense Ad - Middle of Article -->
+        <div class="my-10 text-center bg-gray-50 p-4 rounded-lg border border-gray-200">
+            <p class="text-xs text-gray-400 uppercase tracking-wider mb-2">Advertisement</p>
+            <div class="bg-gray-200 h-24 sm:h-32 flex items-center justify-center text-gray-500 rounded-md">
+                <!-- AdSense ad code will be placed here -->
+                Ad Unit (Middle)
+            </div>
+        </div>
+
+        <!-- Afternoon Session -->
+        <section class="mb-10 p-6 bg-purple-50 rounded-xl border border-purple-100">
+            <h2 class="text-2xl font-bold text-purple-800 mb-6 flex items-center">
+                <svg class="w-7 h-7 mr-3 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                </svg>
+                Afternoon Session
+            </h2>
+            
+            <div class="grid md:grid-cols-2 gap-6 mb-6">
+                <!-- Open Set -->
+                <div class="bg-white p-5 rounded-lg shadow-sm border border-gray-200">
+                    <h3 class="text-lg font-semibold text-gray-700 mb-3">Open Set</h3>
+                    <div class="flex items-baseline mb-2">
+                        <p class="text-2xl font-bold {{if gt .AfternoonOpenChange 0.0}}text-success-600{{else if lt .AfternoonOpenChange 0.0}}text-danger-600{{else}}text-gray-800{{end}}">{{.AfternoonOpenIndex}}</p>
+                        <span class="ml-2 text-base font-medium {{if gt .AfternoonOpenChange 0.0}}text-success-500{{else if lt .AfternoonOpenChange 0.0}}text-danger-500{{else}}text-gray-600{{end}}">
+                            ({{if gt .AfternoonOpenChange 0.0}}+{{end}}{{.AfternoonOpenChange}})
+                        </span>
+                    </div>
+                    {{if .AfternoonOpenHighlights}}
+                    <p class="text-sm text-gray-600 mt-2"><strong>Highlights:</strong> {{.AfternoonOpenHighlights}}</p>
+                    {{end}}
+                </div>
+                
+                <!-- Close Set -->
+                <div class="bg-white p-5 rounded-lg shadow-sm border border-gray-200">
+                    <h3 class="text-lg font-semibold text-gray-700 mb-3">Close Set</h3>
+                    <div class="flex items-baseline mb-2">
+                        <p class="text-2xl font-bold {{if gt .AfternoonCloseChange 0.0}}text-success-600{{else if lt .AfternoonCloseChange 0.0}}text-danger-600{{else}}text-gray-800{{end}}">{{.AfternoonCloseIndex}}</p>
+                        <span class="ml-2 text-base font-medium {{if gt .AfternoonCloseChange 0.0}}text-success-500{{else if lt .AfternoonCloseChange 0.0}}text-danger-500{{else}}text-gray-600{{end}}">
+                            ({{if gt .AfternoonCloseChange 0.0}}+{{end}}{{.AfternoonCloseChange}})
+                        </span>
+                    </div>
+                    {{if .AfternoonCloseHighlights}}
+                    <p class="text-sm text-gray-600 mt-2"><strong>Highlights:</strong> {{.AfternoonCloseHighlights}}</p>
+                    {{end}}
+                </div>
+            </div>
+            
+            <div class="prose prose-lg max-w-none text-gray-700 leading-relaxed">
+                <h4 class="text-lg font-semibold text-purple-700 mb-2">Analysis:</h4>
+                {{.AfternoonOpenAnalysis}}
+                <h4 class="text-lg font-semibold text-purple-700 mb-2 mt-6">Summary:</h4>
+                {{.AfternoonCloseSummary}}
+            </div>
+        </section>
+
+        <!-- Key Takeaways -->
+        <section class="p-6 bg-green-50 rounded-xl border border-green-100">
+            <h2 class="text-2xl font-bold text-green-800 mb-6 flex items-center">
+                <svg class="w-7 h-7 mr-3 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                Key Takeaways
+            </h2>
+            <ul class="space-y-3 text-gray-700 text-lg">
+                {{range .KeyTakeaways}}
+                <li class="flex items-start">
+                    <svg class="w-5 h-5 text-green-500 mr-3 mt-1 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                    </svg>
+                    <span>{{.}}</span>
+                </li>
+                {{end}}
+            </ul>
+        </section>
+
+        <!-- Disclaimer -->
+        <div class="mt-10 text-sm text-gray-500 bg-gray-50 p-4 rounded-lg border border-gray-200">
+            <h4 class="font-semibold text-gray-600 mb-2">Disclaimer:</h4>
+            <p>The information provided in this article is for educational and informational purposes only. It does not constitute financial advice, and you should not make any investment decisions based solely on this content. Always conduct your own research and consult with a qualified financial advisor before making any investment decisions.</p>
+        </div>
+    </article>
+
+    <!-- Sidebar -->
+    <aside class="lg:col-span-3 space-y-8">
+        <!-- Share Article -->
+        <div class="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Share this Article</h3>
+            <div class="flex space-x-3">
+                <a href="#" class="flex-1 text-center py-2 px-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 text-sm font-medium">Facebook</a>
+                <a href="#" class="flex-1 text-center py-2 px-3 bg-sky-500 text-white rounded-lg hover:bg-sky-600 transition-colors duration-200 text-sm font-medium">Twitter</a>
+                <a href="#" class="flex-1 text-center py-2 px-3 bg-gray-700 text-white rounded-lg hover:bg-gray-800 transition-colors duration-200 text-sm font-medium">LinkedIn</a>
+            </div>
+        </div>
+        
+        <!-- AdSense Ad - Sidebar -->
+        <div class="bg-white rounded-2xl shadow-lg p-6 border border-gray-100 text-center">
+            <p class="text-xs text-gray-400 uppercase tracking-wider mb-2">Advertisement</p>
+            <div class="bg-gray-200 h-48 flex items-center justify-center text-gray-500 rounded-md">
+                <!-- AdSense ad code will be placed here -->
+                Ad Unit (Sidebar)
+            </div>
+        </div>
+        
+        <!-- Related Articles -->
+        <div class="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Related Analysis</h3>
+            <ul class="space-y-4">
+                <li>
+                    <a href="#" class="group">
+                        <h4 class="font-semibold text-gray-800 group-hover:text-primary-600 transition-colors duration-200">Market Outlook: Next Week's Predictions</h4>
+                        <p class="text-sm text-gray-500">A look at potential market movers for the upcoming week.</p>
+                    </a>
+                </li>
+                <li>
+                    <a href="#" class="group">
+                        <h4 class="font-semibold text-gray-800 group-hover:text-primary-600 transition-colors duration-200">Sector Spotlight: Banking Industry</h4>
+                        <p class="text-sm text-gray-500">An in-depth analysis of the Thai banking sector.</p>
+                    </a>
+                </li>
+                <li>
+                    <a href="#" class="group">
+                        <h4 class="font-semibold text-gray-800 group-hover:text-primary-600 transition-colors duration-200">Understanding SET50 and SET100</h4>
+                        <p class="text-sm text-gray-500">A guide for new investors on key Thai stock indices.</p>
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </aside>
+</div>
+{{end}}

@@ -1,0 +1,193 @@
+{{template "base.gohtml" .}}
+
+{{define "title"}}Thai Stock Analysis - Professional SET Index Market Analysis & Investment Insights{{end}}
+{{define "description"}}Get professional Thai stock market analysis, SET index reports, and investment insights. Daily market analysis, trading strategies, and financial news for informed investment decisions.{{end}}
+
+{{define "content"}}
+<!-- Hero Section -->
+<section class="relative bg-gradient-to-br from-primary-700 via-primary-600 to-primary-800 text-white rounded-2xl mb-12 overflow-hidden">
+    <div class="absolute inset-0 bg-black opacity-10"></div>
+    <div class="relative px-8 py-16 sm:py-20 lg:py-24">
+        <div class="max-w-4xl mx-auto text-center">
+            <h1 class="text-4xl sm:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
+                Professional Thai <span class="text-yellow-300">Stock Market</span> Analysis
+            </h1>
+            <p class="text-xl sm:text-2xl text-blue-100 mb-8 max-w-3xl mx-auto leading-relaxed">
+                Get expert insights on SET index movements, sector analysis, and investment opportunities 
+                with our comprehensive daily market reports.
+            </p>
+            <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
+                <button class="bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-semibold px-8 py-4 rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg">
+                    View Latest Analysis
+                </button>
+                <button class="border-2 border-white text-white hover:bg-white hover:text-primary-700 font-semibold px-8 py-4 rounded-lg transition-all duration-200">
+                    Subscribe to Updates
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Floating elements for visual appeal -->
+    <div class="absolute top-10 right-10 w-20 h-20 bg-yellow-300 rounded-full opacity-20 animate-pulse"></div>
+    <div class="absolute bottom-10 left-10 w-16 h-16 bg-blue-300 rounded-full opacity-20 animate-pulse delay-1000"></div>
+</section>
+
+<!-- Latest Analysis Section -->
+<section class="mb-12">
+    <div class="flex items-center justify-between mb-8">
+        <div>
+            <h2 class="text-3xl font-bold text-gray-900 mb-2">Latest Market Analysis</h2>
+            <p class="text-gray-600">Professional insights and comprehensive market reports</p>
+        </div>
+        <a href="/articles" class="hidden sm:inline-flex items-center text-primary-600 hover:text-primary-700 font-medium transition-colors duration-200">
+            View all articles
+            <svg class="ml-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
+            </svg>
+        </a>
+    </div>
+    
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {{range .Articles}}
+        <article class="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100 hover:shadow-xl transition-all duration-300 group">
+            <div class="p-8">
+                <div class="flex items-center justify-between mb-4">
+                    <time class="text-sm font-medium text-primary-600 bg-primary-50 px-3 py-1 rounded-full">
+                        {{.Date}}
+                    </time>
+                    <div class="flex items-center space-x-2 text-sm text-gray-500">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <span>5 min read</span>
+                    </div>
+                </div>
+                
+                <h3 class="text-xl font-bold text-gray-900 mb-3 group-hover:text-primary-600 transition-colors duration-200 leading-tight">
+                    Daily Market Analysis - {{.Date}}
+                </h3>
+                
+                <p class="text-gray-600 mb-6 line-clamp-3 leading-relaxed">
+                    {{.ShortSummary}}
+                </p>
+                
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-4">
+                        <div class="flex items-center space-x-2">
+                            <span class="text-sm font-medium text-gray-700">SET Index:</span>
+                            <span class="text-lg font-bold text-gray-900">{{.SetIndex}}</span>
+                            {{if gt .Change 0.0}}
+                            <span class="text-success-600 text-sm font-medium">+{{.Change}}%</span>
+                            {{else if lt .Change 0.0}}
+                            <span class="text-danger-600 text-sm font-medium">{{.Change}}%</span>
+                            {{else}}
+                            <span class="text-gray-500 text-sm font-medium">{{.Change}}%</span>
+                            {{end}}
+                        </div>
+                    </div>
+                    
+                    <a href="/articles/{{.Slug}}" class="inline-flex items-center text-primary-600 hover:text-primary-700 font-medium transition-colors duration-200 group">
+                        Read Analysis
+                        <svg class="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
+                        </svg>
+                    </a>
+                </div>
+            </div>
+        </article>
+        {{end}}
+    </div>
+    
+    <!-- Mobile View All Link -->
+    <div class="mt-8 text-center sm:hidden">
+        <a href="/articles" class="inline-flex items-center text-primary-600 hover:text-primary-700 font-medium transition-colors duration-200">
+            View all articles
+            <svg class="ml-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
+            </svg>
+        </a>
+    </div>
+</section>
+
+<!-- AdSense Compliant Content Section -->
+<section class="mb-12">
+    <div class="bg-gray-50 rounded-2xl p-8 lg:p-12">
+        <div class="text-center mb-12">
+            <h2 class="text-3xl font-bold text-gray-900 mb-4">Why Choose Our Analysis?</h2>
+            <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+                Professional insights backed by years of market experience and comprehensive research
+            </p>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div class="text-center">
+                <div class="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg class="w-8 h-8 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                </div>
+                <h3 class="text-xl font-semibold text-gray-900 mb-2">Accurate Analysis</h3>
+                <p class="text-gray-600">
+                    Data-driven insights with technical and fundamental analysis for informed investment decisions.
+                </p>
+            </div>
+            
+            <div class="text-center">
+                <div class="w-16 h-16 bg-success-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg class="w-8 h-8 text-success-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                </div>
+                <h3 class="text-xl font-semibold text-gray-900 mb-2">Daily Updates</h3>
+                <p class="text-gray-600">
+                    Fresh market analysis every trading day to keep you informed of the latest developments.
+                </p>
+            </div>
+            
+            <div class="text-center">
+                <div class="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg class="w-8 h-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                    </svg>
+                </div>
+                <h3 class="text-xl font-semibold text-gray-900 mb-2">Expert Insights</h3>
+                <p class="text-gray-600">
+                    Professional commentary from experienced analysts with deep market knowledge.
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- AdSense Ad Placement Area -->
+<section class="mb-12">
+    <div class="text-center">
+        <div class="bg-gray-100 border border-gray-200 rounded-lg p-8 text-gray-500">
+            <!-- AdSense ad code will be placed here -->
+            <p class="text-sm">Advertisement</p>
+        </div>
+    </div>
+</section>
+
+<!-- Newsletter Signup (AdSense Friendly) -->
+<section class="mb-12">
+    <div class="bg-gradient-to-r from-primary-600 to-primary-700 rounded-2xl p-8 lg:p-12 text-white text-center">
+        <h2 class="text-3xl font-bold mb-4">Stay Informed</h2>
+        <p class="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
+            Get the latest market analysis and investment insights delivered to your inbox
+        </p>
+        <div class="max-w-md mx-auto">
+            <div class="flex flex-col sm:flex-row gap-4">
+                <input type="email" placeholder="Enter your email address" 
+                       class="flex-1 px-4 py-3 rounded-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-4 focus:ring-white focus:ring-opacity-30">
+                <button class="bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-semibold px-6 py-3 rounded-lg transition-colors duration-200">
+                    Subscribe
+                </button>
+            </div>
+            <p class="text-sm text-blue-200 mt-3">
+                We respect your privacy. Unsubscribe at any time.
+            </p>
+        </div>
+    </div>
+</section>
+{{end}}
