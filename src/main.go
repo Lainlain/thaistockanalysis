@@ -569,8 +569,8 @@ func main() {
 	http.HandleFunc("/terms", staticPageHandler("terms.gohtml", "Terms of Service"))
 	http.HandleFunc("/disclaimer", staticPageHandler("disclaimer.gohtml", "Disclaimer"))
 
-	log.Println("Server starting on http://localhost:8080")
-	if err := http.ListenAndServe(":8080", nil); err != nil {
+	log.Println("Server starting on http://localhost:7777")
+	if err := http.ListenAndServe(":7777", nil); err != nil {
 		log.Fatalf("Server failed to start: %v", err)
 	}
 }
