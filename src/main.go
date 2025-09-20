@@ -358,12 +358,20 @@ func parseMarkdownArticle(filePath string) (StockData, error) {
 				continue
 			}
 		} else if inKeyTakeawaysSection {
+			// Handle lines that are list items
 			if strings.HasPrefix(line, "-") || strings.HasPrefix(line, "*") {
-				prefix := "-"
-				if strings.HasPrefix(line, "*") {
-					prefix = "*"
+				// Clean up the line by removing the list marker and any HTML tags
+				item := strings.TrimSpace(strings.TrimPrefix(line, "*"))
+				item = strings.TrimSpace(strings.TrimPrefix(item, "-"))
+				item = strings.TrimPrefix(item, "<li>")
+				item = strings.TrimSuffix(item, "</li>")
+				// Remove any remaining <p> tags
+				item = strings.TrimPrefix(item, "<p>")
+				item = strings.TrimSuffix(item, "</p>")
+
+				if item != "" {
+					data.KeyTakeaways = append(data.KeyTakeaways, strings.TrimSpace(item))
 				}
-				data.KeyTakeaways = append(data.KeyTakeaways, strings.TrimSpace(strings.TrimPrefix(line, prefix)))
 				continue
 			}
 		}
@@ -649,7 +657,9 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := tmpl.Execute(w, data); err != nil {
+		log.Printf("Error executing index template: %v", err)
 		http.Error(w, "Internal Server Error", 500)
+		return
 	}
 }
 
@@ -660,11 +670,17 @@ func articleHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	stockData, err := parseMarkdownArticle("articles/" + slug + ".md")
+	filePath := "articles/" + slug + ".md"
+	log.Printf("Attempting to parse article: %s", filePath)
+	stockData, err := parseMarkdownArticle(filePath)
 	if err != nil {
+		log.Printf("Error parsing article %s: %v", filePath, err)
 		http.Error(w, "Article not found", http.StatusNotFound)
 		return
 	}
+
+	// Log the parsed data to debug
+	log.Printf("Successfully parsed stockData for slug %s: %+v", slug, stockData)
 
 	// Set the date from the slug
 	t, err := time.Parse("2006-01-02", slug)
@@ -672,24 +688,23 @@ func articleHandler(w http.ResponseWriter, r *http.Request) {
 		stockData.CurrentDate = t.Format("2 January 2006")
 	}
 
-	baseTmpl, err := template.ParseFiles("src/templates/base.gohtml")
-	if err != nil {
-		http.Error(w, "Internal Server Error", 500)
-		return
+	// Define a custom function map
+	funcMap := template.FuncMap{
+		"printf": fmt.Sprintf,
 	}
-	tmpl, err := baseTmpl.Clone()
+
+	// Parse all templates together to avoid re-definition errors
+	tmpl, err := template.New("").Funcs(funcMap).ParseFiles("src/templates/base.gohtml", "src/templates/article.gohtml")
 	if err != nil {
-		http.Error(w, "Internal Server Error", 500)
-		return
-	}
-	_, err = tmpl.ParseFiles("src/templates/article.gohtml")
-	if err != nil {
+		log.Printf("Error parsing templates: %v", err)
 		http.Error(w, "Internal Server Error", 500)
 		return
 	}
 
+	// Execute the base template, which will in turn call the content template
 	err = tmpl.ExecuteTemplate(w, "base.gohtml", stockData)
 	if err != nil {
+		log.Printf("Error executing template for slug %s: %v", slug, err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }

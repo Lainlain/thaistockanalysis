@@ -7,22 +7,21 @@
 <!-- Hero Section -->
 <section class="relative bg-gradient-to-br from-primary-700 via-primary-600 to-primary-800 text-white rounded-2xl mb-12 overflow-hidden">
     <div class="absolute inset-0 bg-black opacity-10"></div>
-    <div class="relative px-8 py-16 sm:py-20 lg:py-24">
+    <div class="relative px-6 py-12 sm:px-8 sm:py-20 lg:py-24">
         <div class="max-w-4xl mx-auto text-center">
-            <h1 class="text-4xl sm:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
+            <h1 class="text-3xl sm:text-5xl lg:text-6xl font-bold mb-4 sm:mb-6 leading-tight">
                 Professional Thai <span class="text-yellow-300">Stock Market</span> Analysis
             </h1>
-            <p class="text-xl sm:text-2xl text-blue-100 mb-8 max-w-3xl mx-auto leading-relaxed">
-                Get expert insights on SET index movements, sector analysis, and investment opportunities 
-                with our comprehensive daily market reports.
+            <p class="text-lg sm:text-2xl text-blue-100 mb-8 max-w-3xl mx-auto leading-relaxed">
+                Expert insights on SET index movements, sector analysis, and investment opportunities.
             </p>
             <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
-                <button class="bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-semibold px-8 py-4 rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg">
+                <a href="#latest-analysis" class="bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-semibold px-8 py-3 sm:py-4 rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg w-full sm:w-auto">
                     View Latest Analysis
-                </button>
-                <button class="border-2 border-white text-white hover:bg-white hover:text-primary-700 font-semibold px-8 py-4 rounded-lg transition-all duration-200">
-                    Subscribe to Updates
-                </button>
+                </a>
+                <a href="#" class="hidden sm:inline-block border-2 border-white text-white hover:bg-white hover:text-primary-700 font-semibold px-8 py-4 rounded-lg transition-all duration-200">
+                    Subscribe
+                </a>
             </div>
         </div>
     </div>
@@ -33,7 +32,7 @@
 </section>
 
 <!-- Latest Analysis Section -->
-<section class="mb-12">
+<section id="latest-analysis" class="mb-12 scroll-mt-20">
     <div class="flex items-center justify-between mb-8">
         <div>
             <h2 class="text-3xl font-bold text-gray-900 mb-2">Latest Market Analysis</h2>
@@ -71,27 +70,33 @@
                     {{.ShortSummary}}
                 </p>
                 
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center space-x-4">
-                        <div class="flex items-center space-x-2">
-                            <span class="text-sm font-medium text-gray-700">SET Index:</span>
-                            <span class="text-lg font-bold text-gray-900">{{.SetIndex}}</span>
+                <div class="mt-6 pt-6 border-t border-gray-100">
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                        <div class="flex items-baseline space-x-2">
+                            <span class="text-sm font-medium text-gray-500">SET Index:</span>
+                            <span class="text-xl font-bold text-gray-900">{{.SetIndex}}</span>
                             {{if gt .Change 0.0}}
-                            <span class="text-success-600 text-sm font-medium">+{{.Change}}%</span>
+                            <span class="text-success-600 text-base font-semibold flex items-center">
+                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path></svg>
+                                +{{printf "%.2f" .Change}}%
+                            </span>
                             {{else if lt .Change 0.0}}
-                            <span class="text-danger-600 text-sm font-medium">{{.Change}}%</span>
+                            <span class="text-danger-600 text-base font-semibold flex items-center">
+                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path></svg>
+                                {{printf "%.2f" .Change}}%
+                            </span>
                             {{else}}
-                            <span class="text-gray-500 text-sm font-medium">{{.Change}}%</span>
+                            <span class="text-gray-500 text-base font-medium">{{printf "%.2f" .Change}}%</span>
                             {{end}}
                         </div>
+                        
+                        <a href="/articles/{{.Slug}}" class="inline-flex items-center justify-center sm:justify-start text-center px-4 py-2 rounded-lg bg-primary-600 text-white hover:bg-primary-700 font-semibold transition-all duration-200 group">
+                            Read Analysis
+                            <svg class="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
+                            </svg>
+                        </a>
                     </div>
-                    
-                    <a href="/articles/{{.Slug}}" class="inline-flex items-center text-primary-600 hover:text-primary-700 font-medium transition-colors duration-200 group">
-                        Read Analysis
-                        <svg class="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
-                        </svg>
-                    </a>
                 </div>
             </div>
         </article>
