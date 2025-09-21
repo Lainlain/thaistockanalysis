@@ -417,9 +417,9 @@ func parseHighlightsFromMarkdown(line string) string {
 	return ""
 }
 
-// SUPER FAST index handler - database only, no markdown parsing
+// Enhanced index handler - loads data from markdown files
 func indexHandler(w http.ResponseWriter, r *http.Request) {
-	// Get articles from database only - no file system operations
+	// Get articles from database
 	rows, err := db.Query("SELECT slug, title, summary, created_at FROM articles ORDER BY created_at DESC LIMIT 20")
 	if err != nil {
 		http.Error(w, "Internal Server Error", 500)
@@ -437,14 +437,46 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 
-		// Fast preview creation - no markdown parsing
+		// Try to load actual data from markdown file
+		markdownPath := fmt.Sprintf("articles/%s.md", slug)
+		var setIndex string = "--"
+		var change float64 = 0.0
+		var shortSummary string = summary.String
+
+		// Parse markdown file to get real data
+		if stockData, err := getCachedStockData(markdownPath); err == nil {
+			// Use the most recent close index available
+			if stockData.AfternoonCloseIndex > 0 {
+				setIndex = fmt.Sprintf("%.2f", stockData.AfternoonCloseIndex)
+				change = stockData.AfternoonCloseChange
+			} else if stockData.MorningCloseIndex > 0 {
+				setIndex = fmt.Sprintf("%.2f", stockData.MorningCloseIndex)
+				change = stockData.MorningCloseChange
+			} else if stockData.AfternoonOpenIndex > 0 {
+				setIndex = fmt.Sprintf("%.2f", stockData.AfternoonOpenIndex)
+				change = stockData.AfternoonOpenChange
+			} else if stockData.MorningOpenIndex > 0 {
+				setIndex = fmt.Sprintf("%.2f", stockData.MorningOpenIndex)
+				change = stockData.MorningOpenChange
+			}
+
+			// Create a short summary from highlights and takeaways
+			if len(stockData.KeyTakeaways) > 0 {
+				shortSummary = stockData.KeyTakeaways[0]
+			} else if stockData.MorningOpenHighlights != "" {
+				shortSummary = stockData.MorningOpenHighlights
+			} else if stockData.AfternoonOpenHighlights != "" {
+				shortSummary = stockData.AfternoonOpenHighlights
+			}
+		}
+
 		preview := ArticlePreview{
 			Title:        title,
 			Date:         createdAt,
-			SetIndex:     "--", // Will show pending until loaded
-			Change:       0.0,
-			ShortSummary: summary.String,
-			Summary:      summary.String,
+			SetIndex:     setIndex,
+			Change:       change,
+			ShortSummary: shortSummary,
+			Summary:      shortSummary,
 			Slug:         slug,
 			URL:          fmt.Sprintf("/articles/%s", slug),
 		}
