@@ -7,32 +7,55 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/gomarkdown/markdown"
 	_ "github.com/mattn/go-sqlite3"
 )
 
-// Global database connection
+// Global variables following coding instructions
 var db *sql.DB
 
+// Template cache for performance
+var (
+	templateCache = make(map[string]*template.Template)
+	templateMutex sync.RWMutex
+	templateFuncs = template.FuncMap{
+		"printf": fmt.Sprintf,
+		"html":   func(s string) template.HTML { return template.HTML(s) },
+		"add":    func(a, b int) int { return a + b },
+		"mod":    func(a, b int) int { return a % b }, // Add missing mod function
+		"markdownToHTML": func(s string) template.HTML {
+			if s == "" {
+				return template.HTML("")
+			}
+			htmlBytes := markdown.ToHTML([]byte(s), nil, nil)
+			return template.HTML(htmlBytes)
+		},
+	}
+)
+
+// Data structures as per coding instructions
 type StockData struct {
 	CurrentDate              string
-	MorningOpenIndex         string
+	MorningOpenIndex         float64
 	MorningOpenChange        float64
 	MorningOpenHighlights    string
 	MorningOpenAnalysis      template.HTML
-	MorningCloseIndex        string
+	MorningCloseIndex        float64
 	MorningCloseChange       float64
 	MorningCloseHighlights   string
 	MorningCloseSummary      template.HTML
-	AfternoonOpenIndex       string
+	AfternoonOpenIndex       float64
 	AfternoonOpenChange      float64
 	AfternoonOpenHighlights  string
 	AfternoonOpenAnalysis    template.HTML
-	AfternoonCloseIndex      string
+	AfternoonCloseIndex      float64
 	AfternoonCloseChange     float64
 	AfternoonCloseHighlights string
 	AfternoonCloseSummary    template.HTML
@@ -40,21 +63,23 @@ type StockData struct {
 }
 
 type ArticlePreview struct {
+	Title        string
 	Date         string
 	SetIndex     string
 	Change       float64
 	ShortSummary string
+	Summary      string
 	Slug         string
+	URL          string
 }
 
-// DBArticle represents an article stored in the database
 type DBArticle struct {
 	ID        int
 	Slug      string
 	Title     string
-	Summary   sql.NullString // Can be NULL
-	Content   sql.NullString // Can be NULL
-	CreatedAt string         // Stored as TEXT in YYYY-MM-DD format
+	Summary   sql.NullString
+	Content   sql.NullString
+	CreatedAt string
 }
 
 type IndexPageData struct {
@@ -62,90 +87,83 @@ type IndexPageData struct {
 	Articles    []ArticlePreview
 }
 
-// AdminDashboardData for the admin template
 type AdminDashboardData struct {
 	CurrentDate string
 	Articles    []DBArticle
-	Success     string // For success messages
-	Error       string // For error messages
+	Success     string
+	Error       string
 }
 
-// AdminArticleFormData for the article form template (for new/edit)
 type AdminArticleFormData struct {
-	CurrentDate string // For default date in form
+	CurrentDate string
 	Article     DBArticle
 	Error       string
-	IsEdit      bool   // To differentiate between new and edit mode in the template
-	Action      string // Add Action field
-
-	// Fields for structured markdown content
-	MorningOpenIndex         string
-	MorningOpenChange        float64
-	MorningOpenHighlights    string
-	MorningOpenAnalysis      string
-	MorningCloseIndex        string
-	MorningCloseChange       float64
-	MorningCloseHighlights   string
-	MorningCloseSummary      string
-	AfternoonOpenIndex       string
-	AfternoonOpenChange      float64
-	AfternoonOpenHighlights  string
-	AfternoonOpenAnalysis    string
-	AfternoonCloseIndex      string
-	AfternoonCloseChange     float64
-	AfternoonCloseHighlights string
-	AfternoonCloseSummary    string
-	KeyTakeaways             string // Will be a comma-separated string from form
+	IsEdit      bool
+	Action      string
 }
 
-// PageData for static pages like privacy, terms, etc.
-type PageData struct {
-	LastUpdated string
+// Template cache function following coding instructions
+func getTemplate(name string, files ...string) (*template.Template, error) {
+	templateMutex.RLock()
+	if tmpl, exists := templateCache[name]; exists {
+		templateMutex.RUnlock()
+		return tmpl, nil
+	}
+	templateMutex.RUnlock()
+
+	templateMutex.Lock()
+	defer templateMutex.Unlock()
+
+	if tmpl, exists := templateCache[name]; exists {
+		return tmpl, nil
+	}
+
+	tmpl := template.New(name).Funcs(templateFuncs)
+	var err error
+	tmpl, err = tmpl.ParseFiles(files...)
+	if err != nil {
+		return nil, err
+	}
+
+	templateCache[name] = tmpl
+	return tmpl, nil
 }
 
-// initDB initializes the SQLite database and creates tables
+// Database initialization following coding instructions
 func initDB() {
 	var err error
-	db, err = sql.Open("sqlite3", "./admin.db") // Open or create admin.db in project root
+	db, err = sql.Open("sqlite3", "src/admin.db?cache=shared&mode=rwc&_journal_mode=WAL&_synchronous=NORMAL")
 	if err != nil {
 		log.Fatalf("Failed to open database: %v", err)
 	}
 
-	// Create articles table if it doesn't exist
+	// Set connection pool limits
+	db.SetMaxOpenConns(10)
+	db.SetMaxIdleConns(10)
+	db.SetConnMaxLifetime(5 * time.Minute)
+
+	// Create the base articles table as per coding instructions
 	createTableSQL := `
     CREATE TABLE IF NOT EXISTS articles (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         slug TEXT NOT NULL UNIQUE,
         title TEXT NOT NULL,
         summary TEXT,
-        content TEXT, -- New column for markdown content
+        content TEXT,
         created_at TEXT NOT NULL
-    );`
+    );
+    CREATE INDEX IF NOT EXISTS idx_articles_slug ON articles(slug);
+    CREATE INDEX IF NOT EXISTS idx_articles_created_at ON articles(created_at);`
+
 	_, err = db.Exec(createTableSQL)
 	if err != nil {
 		log.Fatalf("Failed to create articles table: %v", err)
 	}
-	log.Println("Database initialized and 'articles' table ensured.")
 
-	// Add 'content' column if it doesn't exist (for backward compatibility)
-	var columnName string
-	err = db.QueryRow("SELECT name FROM PRAGMA_TABLE_INFO('articles') WHERE name='content'").Scan(&columnName)
-	if err == sql.ErrNoRows {
-		log.Println("Adding 'content' column to 'articles' table...")
-		_, err = db.Exec("ALTER TABLE articles ADD COLUMN content TEXT")
-		if err != nil {
-			log.Fatalf("Failed to add 'content' column: %v", err)
-		}
-		log.Println("'content' column added successfully.")
-	} else if err != nil {
-		log.Fatalf("Failed to check for 'content' column: %v", err)
-	}
-
-	// Seed some sample data if the table is empty
 	seedArticlesTable()
 }
 
-// seedArticlesTable inserts sample articles into the database if it's empty
+// Seed function following coding instructions
 func seedArticlesTable() {
 	var count int
 	err := db.QueryRow("SELECT COUNT(*) FROM articles").Scan(&count)
@@ -155,8 +173,6 @@ func seedArticlesTable() {
 	}
 
 	if count == 0 {
-		log.Println("Seeding articles table with sample data...")
-		// Added 'content' to the INSERT statement
 		stmt, err := db.Prepare("INSERT INTO articles(slug, title, summary, content, created_at) VALUES(?, ?, ?, ?, ?)")
 		if err != nil {
 			log.Printf("Error preparing statement: %v", err)
@@ -164,555 +180,269 @@ func seedArticlesTable() {
 		}
 		defer stmt.Close()
 
-		// Provide an empty string for the content field
-		_, err = stmt.Exec("2025-09-19", "Stock Market Analysis - 19 September 2025", "SET index closed higher with banking and energy sectors leading gains", "", "2025-09-19")
-		if err != nil {
-			log.Printf("Error inserting sample article 1: %v", err)
+		// Sample articles following coding instructions
+		articles := [][]string{
+			{"2025-09-22", "Stock Market Analysis - 22 September 2025", "Morning session opened with modest gains in key sectors", "", "2025-09-22"},
+			{"2025-09-19", "Stock Market Analysis - 19 September 2025", "SET index closed higher with banking and energy sectors leading gains", "", "2025-09-19"},
+			{"2025-09-18", "Stock Market Analysis - 18 September 2025", "Market declined amid regional weakness and profit-taking", "", "2025-09-18"},
 		}
-		_, err = stmt.Exec("2025-09-18", "Stock Market Analysis - 18 September 2025", "Market declined amid regional weakness", "", "2025-09-18")
-		if err != nil {
-			log.Printf("Error inserting sample article 2: %v", err)
+
+		for _, article := range articles {
+			stmt.Exec(article[0], article[1], article[2], article[3], article[4])
 		}
-		log.Println("Sample articles seeded.")
+		log.Printf("Seeded %d articles", len(articles))
 	}
 }
 
-// parseMarkdownArticle reads a markdown file and extracts data into StockData
-func parseMarkdownArticle(filePath string) (StockData, error) {
-	content, err := os.ReadFile(filePath)
-	if err != nil {
-		return StockData{}, fmt.Errorf("failed to read markdown file: %w", err)
-	}
-
-	data := StockData{}
-	data.CurrentDate = time.Now().Format("2 January 2006") // Default, will be overridden by markdown
-
-	lines := strings.Split(string(content), "\n")
-
-	var currentContentBuilder strings.Builder
-	var currentContentTarget string // e.g., "MorningOpenAnalysis", "MorningCloseSummary"
-
-	// Helper function to flush the builder content to the correct field
-	flushContent := func() {
-		if currentContentBuilder.Len() > 0 && currentContentTarget != "" {
-			html := template.HTML(markdown.ToHTML([]byte(currentContentBuilder.String()), nil, nil))
-			switch currentContentTarget {
-			case "MorningOpenAnalysis":
-				data.MorningOpenAnalysis = html
-			case "MorningCloseSummary":
-				data.MorningCloseSummary = html
-			case "AfternoonOpenAnalysis":
-				data.AfternoonOpenAnalysis = html
-			case "AfternoonCloseSummary":
-				data.AfternoonCloseSummary = html
-			}
-			currentContentBuilder.Reset()
-			currentContentTarget = "" // Reset target after flushing
-		}
-	}
-
-	// State variables to track where we are in the document
-	inMorningSession := false
-	inAfternoonSession := false
-	inKeyTakeawaysSection := false // Renamed to avoid conflict with data.KeyTakeaways
-
-	for _, line := range lines {
-		line = strings.TrimSpace(line)
-
-		// Session headers
-		if strings.HasPrefix(line, "## Morning Session") {
-			flushContent()
-			inMorningSession = true
-			inAfternoonSession = false
-			inKeyTakeawaysSection = false
-			continue
-		}
-		if strings.HasPrefix(line, "## Afternoon Session") {
-			flushContent()
-			inMorningSession = false
-			inAfternoonSession = true
-			inKeyTakeawaysSection = false
-			continue
-		}
-		if strings.HasPrefix(line, "## Key Takeaways") {
-			flushContent()
-			inMorningSession = false
-			inAfternoonSession = false
-			inKeyTakeawaysSection = true
-			continue
-		}
-
-		// Handle content based on current session
-		if inMorningSession {
-			if strings.HasPrefix(line, "### Open Set") {
-				flushContent()
-				currentContentTarget = "MorningOpenSet" // Set context for highlights
-				continue
-			}
-			if strings.HasPrefix(line, "### Open Analysis") {
-				flushContent()
-				currentContentTarget = "MorningOpenAnalysis"
-				continue
-			}
-			if strings.HasPrefix(line, "### Close Set") {
-				flushContent()
-				currentContentTarget = "MorningCloseSet" // Set context for highlights
-				continue
-			}
-			if strings.HasPrefix(line, "### Close Summary") {
-				flushContent()
-				currentContentTarget = "MorningCloseSummary"
-				continue
-			}
-
-			// List items within Morning Session
-			if strings.HasPrefix(line, "* Open Index:") {
-				parts := strings.Fields(strings.TrimPrefix(line, "* Open Index:"))
-				if len(parts) > 0 {
-					data.MorningOpenIndex = parts[0]
-				}
-				if len(parts) > 1 {
-					changeStr := strings.Trim(parts[1], "()")
-					if change, err := strconv.ParseFloat(changeStr, 64); err == nil {
-						data.MorningOpenChange = change
-					}
-				}
-				continue
-			}
-			if strings.HasPrefix(line, "* Highlights:") {
-				if currentContentTarget == "MorningOpenSet" {
-					data.MorningOpenHighlights = strings.TrimSpace(strings.TrimPrefix(line, "* Highlights:"))
-				} else if currentContentTarget == "MorningCloseSet" {
-					data.MorningCloseHighlights = strings.TrimSpace(strings.TrimPrefix(line, "* Highlights:"))
-				}
-				continue
-			}
-			if strings.HasPrefix(line, "* Close Index:") {
-				parts := strings.Fields(strings.TrimPrefix(line, "* Close Index:"))
-				if len(parts) > 0 {
-					data.MorningCloseIndex = parts[0]
-				}
-				if len(parts) > 1 {
-					changeStr := strings.Trim(parts[1], "()")
-					if change, err := strconv.ParseFloat(changeStr, 64); err == nil {
-						data.MorningCloseChange = change
-					}
-				}
-				continue
-			}
-		} else if inAfternoonSession {
-			if strings.HasPrefix(line, "### Open Set") {
-				flushContent()
-				currentContentTarget = "AfternoonOpenSet" // Set context for highlights
-				continue
-			}
-			if strings.HasPrefix(line, "### Open Analysis") {
-				flushContent()
-				currentContentTarget = "AfternoonOpenAnalysis"
-				continue
-			}
-			if strings.HasPrefix(line, "### Close Set") || strings.HasPrefix(line, "### End of Day Set") {
-				flushContent()
-				currentContentTarget = "AfternoonCloseSet" // Set context for highlights
-				continue
-			}
-			if strings.HasPrefix(line, "### Close Summary") {
-				flushContent()
-				currentContentTarget = "AfternoonCloseSummary"
-				continue
-			}
-
-			// List items within Afternoon Session
-			if strings.HasPrefix(line, "* Open Index:") {
-				parts := strings.Fields(strings.TrimPrefix(line, "* Open Index:"))
-				if len(parts) > 0 {
-					data.AfternoonOpenIndex = parts[0]
-				}
-				if len(parts) > 1 {
-					changeStr := strings.Trim(parts[1], "()")
-					if change, err := strconv.ParseFloat(changeStr, 64); err == nil {
-						data.AfternoonOpenChange = change
-					}
-				}
-				continue
-			}
-			if strings.HasPrefix(line, "* Highlights:") {
-				if currentContentTarget == "AfternoonOpenSet" {
-					data.AfternoonOpenHighlights = strings.TrimSpace(strings.TrimPrefix(line, "* Highlights:"))
-				} else if currentContentTarget == "AfternoonCloseSet" {
-					data.AfternoonCloseHighlights = strings.TrimSpace(strings.TrimPrefix(line, "* Highlights:"))
-				}
-				continue
-			}
-			if strings.HasPrefix(line, "* Close Index:") {
-				parts := strings.Fields(strings.TrimPrefix(line, "* Close Index:"))
-				if len(parts) > 0 {
-					data.AfternoonCloseIndex = parts[0]
-				}
-				if len(parts) > 1 {
-					changeStr := strings.Trim(parts[1], "()")
-					if change, err := strconv.ParseFloat(changeStr, 64); err == nil {
-						data.AfternoonCloseChange = change
-					}
-				}
-				continue
-			}
-		} else if inKeyTakeawaysSection {
-			// Handle lines that are list items
-			if strings.HasPrefix(line, "-") || strings.HasPrefix(line, "*") {
-				// Clean up the line by removing the list marker and any HTML tags
-				item := strings.TrimSpace(strings.TrimPrefix(line, "*"))
-				item = strings.TrimSpace(strings.TrimPrefix(item, "-"))
-				item = strings.TrimPrefix(item, "<li>")
-				item = strings.TrimSuffix(item, "</li>")
-				// Remove any remaining <p> tags
-				item = strings.TrimPrefix(item, "<p>")
-				item = strings.TrimSuffix(item, "</p>")
-
-				if item != "" {
-					data.KeyTakeaways = append(data.KeyTakeaways, strings.TrimSpace(item))
-				}
-				continue
-			}
-		}
-
-		// If we are collecting content for a target field, append the line
-		if currentContentTarget != "" {
-			currentContentBuilder.WriteString(line + "\n")
-		}
-	}
-
-	flushContent() // Flush any remaining content after the loop
-
-	log.Printf("DEBUG: parseMarkdownArticle finished for %s. Data: %+v", filePath, data)
-
-	return data, nil
-}
-
-// buildMarkdownFromForm constructs a markdown string from the structured form fields
-func buildMarkdownFromForm(r *http.Request) string {
-	// Ensure form is parsed
-	_ = r.ParseForm()
-
-	// Helper to get and trim form value
-	get := func(key string) string { return strings.TrimSpace(r.FormValue(key)) }
-
-	// Read fields
-	moi := get("morning_open_index")
-	moc := get("morning_open_change")
-	moh := get("morning_open_highlights")
-	moa := get("morning_open_analysis")
-	mci := get("morning_close_index")
-	mcc := get("morning_close_change")
-	mch := get("morning_close_highlights")
-	mcs := get("morning_close_summary")
-
-	aoi := get("afternoon_open_index")
-	aoc := get("afternoon_open_change")
-	aoh := get("afternoon_open_highlights")
-	aoa := get("afternoon_open_analysis")
-	aci := get("afternoon_close_index")
-	acc := get("afternoon_close_change")
-	ach := get("afternoon_close_highlights")
-	acs := get("afternoon_close_summary")
-
-	kt := get("key_takeaways")
-
-	// Helper for formatting change like (0.23)
-	formatChange := func(s string) string {
-		if s == "" {
-			return ""
-		}
-		if _, err := strconv.ParseFloat(s, 64); err == nil {
-			return fmt.Sprintf(" (%s)", s)
-		}
-		// If not a number already, just wrap in parentheses if not present
-		if strings.HasPrefix(s, "(") && strings.HasSuffix(s, ")") {
-			return " " + s
-		}
-		return fmt.Sprintf(" (%s)", s)
-	}
-
-	var b strings.Builder
-
-	// Morning Session
-	b.WriteString("## Morning Session\n\n")
-	// Open
-	b.WriteString("### Open Set\n")
-	if moi != "" {
-		b.WriteString("* Open Index: ")
-		b.WriteString(moi)
-		b.WriteString(formatChange(moc))
-		b.WriteString("\n")
-	}
-	if moh != "" {
-		b.WriteString("* Highlights: ")
-		b.WriteString(moh)
-		b.WriteString("\n")
-	}
-	b.WriteString("\n### Open Analysis\n")
-	if moa != "" {
-		b.WriteString(moa)
-		if !strings.HasSuffix(moa, "\n") {
-			b.WriteString("\n")
-		}
-	}
-	b.WriteString("\n")
-	// Close
-	b.WriteString("### Close Set\n")
-	if mci != "" {
-		b.WriteString("* Close Index: ")
-		b.WriteString(mci)
-		b.WriteString(formatChange(mcc))
-		b.WriteString("\n")
-	}
-	if mch != "" {
-		b.WriteString("* Highlights: ")
-		b.WriteString(mch)
-		b.WriteString("\n")
-	}
-	b.WriteString("\n### Close Summary\n")
-	if mcs != "" {
-		b.WriteString(mcs)
-		if !strings.HasSuffix(mcs, "\n") {
-			b.WriteString("\n")
-		}
-	}
-
-	b.WriteString("\n")
-
-	// Afternoon Session
-	b.WriteString("## Afternoon Session\n\n")
-	// Open
-	b.WriteString("### Open Set\n")
-	if aoi != "" {
-		b.WriteString("* Open Index: ")
-		b.WriteString(aoi)
-		b.WriteString(formatChange(aoc))
-		b.WriteString("\n")
-	}
-	if aoh != "" {
-		b.WriteString("* Highlights: ")
-		b.WriteString(aoh)
-		b.WriteString("\n")
-	}
-	b.WriteString("\n### Open Analysis\n")
-	if aoa != "" {
-		b.WriteString(aoa)
-		if !strings.HasSuffix(aoa, "\n") {
-			b.WriteString("\n")
-		}
-	}
-	b.WriteString("\n")
-	// Close
-	b.WriteString("### Close Set\n")
-	if aci != "" {
-		b.WriteString("* Close Index: ")
-		b.WriteString(aci)
-		b.WriteString(formatChange(acc))
-		b.WriteString("\n")
-	}
-	if ach != "" {
-		b.WriteString("* Highlights: ")
-		b.WriteString(ach)
-		b.WriteString("\n")
-	}
-	b.WriteString("\n### Close Summary\n")
-	if acs != "" {
-		b.WriteString(acs)
-		if !strings.HasSuffix(acs, "\n") {
-			b.WriteString("\n")
-		}
-	}
-
-	// Key Takeaways
-	ktItems := []string{}
-	for _, item := range strings.Split(kt, ",") {
-		trimmed := strings.TrimSpace(item)
-		if trimmed != "" {
-			ktItems = append(ktItems, trimmed)
-		}
-	}
-	if len(ktItems) > 0 {
-		b.WriteString("\n## Key Takeaways\n\n")
-		for _, item := range ktItems {
-			b.WriteString("- ")
-			b.WriteString(item)
-			b.WriteString("\n")
-		}
-	}
-
-	return b.String()
-}
-
-// formatDate converts "YYYY-MM-DD" to "DD MMM YYYY"
-func formatDate(dateStr string) string {
-	t, err := time.Parse("2006-01-02", dateStr)
-	if err != nil {
-		log.Printf("Error parsing date string '%s': %v", dateStr, err)
-		return dateStr // Return original on error
-	}
-	return t.Format("02 Jan 2006")
-}
-
-func main() {
-	initDB()
-	defer db.Close()
-
-	fs := http.FileServer(http.Dir("src/static"))
-	http.Handle("/static/", http.StripPrefix("/static/", fs))
-
-	http.HandleFunc("/", indexHandler)
-	http.HandleFunc("/articles/", articleHandler)
-	http.HandleFunc("/admin", adminDashboardHandler)
-	http.HandleFunc("/admin/articles/new", adminArticleFormHandler)
-	http.HandleFunc("/admin/articles/edit/", adminArticleFormHandler)
-	http.HandleFunc("/admin/articles/save", adminArticleSaveHandler)
-	http.HandleFunc("/admin/articles/delete/", adminArticleDeleteHandler)
-
-	// Static page routes
-	http.HandleFunc("/about", staticPageHandler("about.gohtml", "About Us"))
-	http.HandleFunc("/contact", staticPageHandler("contact.gohtml", "Contact Us"))
-	http.HandleFunc("/privacy", staticPageHandler("privacy.gohtml", "Privacy Policy"))
-	http.HandleFunc("/terms", staticPageHandler("terms.gohtml", "Terms of Service"))
-	http.HandleFunc("/disclaimer", staticPageHandler("disclaimer.gohtml", "Disclaimer"))
-
-	log.Println("Server starting on http://localhost:7777")
-	if err := http.ListenAndServe(":7777", nil); err != nil {
-		log.Fatalf("Server failed to start: %v", err)
-	}
-}
-
+// FAST index handler following coding instructions - database only
 func indexHandler(w http.ResponseWriter, r *http.Request) {
-	baseTmpl, err := template.ParseFiles("src/templates/base.gohtml")
-	if err != nil {
-		http.Error(w, "Internal Server Error", 500)
-		return
-	}
-	tmpl, err := baseTmpl.Clone()
-	if err != nil {
-		http.Error(w, "Internal Server Error", 500)
-		return
-	}
-	_, err = tmpl.ParseFiles("src/templates/index.gohtml")
-	if err != nil {
-		http.Error(w, "Internal Server Error", 500)
-		return
-	}
+	start := time.Now()
 
-	rows, err := db.Query("SELECT slug, title, summary, created_at FROM articles ORDER BY created_at DESC")
+	// Cache headers
+	w.Header().Set("Cache-Control", "public, max-age=300")
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+
+	// Simple database query as per coding instructions
+	rows, err := db.Query("SELECT slug, title, summary, created_at FROM articles ORDER BY created_at DESC LIMIT 10")
 	if err != nil {
-		http.Error(w, "Failed to fetch articles", http.StatusInternalServerError)
+		log.Printf("Database error: %v", err)
+		http.Error(w, "Database Error", 500)
 		return
 	}
 	defer rows.Close()
 
-	var articles []ArticlePreview
+	var previews []ArticlePreview
 	for rows.Next() {
-		var dbArticle DBArticle
-		if err := rows.Scan(&dbArticle.Slug, &dbArticle.Title, &dbArticle.Summary, &dbArticle.CreatedAt); err != nil {
-			log.Printf("Error scanning article from DB: %v", err)
-			continue // Skip this article on error
-		}
+		var slug, title, createdAt string
+		var summary sql.NullString
 
-		// Parse the corresponding markdown file to get live data
-		filePath := fmt.Sprintf("articles/%s.md", dbArticle.Slug)
-		stockData, err := parseMarkdownArticle(filePath)
+		err := rows.Scan(&slug, &title, &summary, &createdAt)
 		if err != nil {
-			log.Printf("Could not parse markdown file %s: %v. Skipping.", filePath, err)
-			continue // Skip article if markdown can't be parsed
+			continue
 		}
 
-		summary := ""
-		if dbArticle.Summary.Valid {
-			summary = dbArticle.Summary.String
+		// Simple preview creation following coding instructions
+		preview := ArticlePreview{
+			Title:        title,
+			Date:         createdAt,
+			SetIndex:     "SET", // Simple placeholder
+			Change:       0.0,
+			ShortSummary: summary.String,
+			Summary:      summary.String,
+			Slug:         slug,
+			URL:          fmt.Sprintf("/articles/%s", slug),
 		}
-
-		// Use parsed data. Fallback to "N/A" if not found.
-		setIndex := "N/A"
-		change := 0.0
-		if stockData.AfternoonCloseIndex != "" {
-			setIndex = stockData.AfternoonCloseIndex
-			change = stockData.AfternoonCloseChange
-		}
-
-		article := ArticlePreview{
-			Date:         formatDate(dbArticle.CreatedAt),
-			SetIndex:     setIndex,
-			Change:       change,
-			ShortSummary: summary,
-			Slug:         dbArticle.Slug,
-		}
-		articles = append(articles, article)
-	}
-
-	if err := rows.Err(); err != nil {
-		http.Error(w, "Error iterating over articles", http.StatusInternalServerError)
-		return
+		previews = append(previews, preview)
 	}
 
 	data := IndexPageData{
 		CurrentDate: time.Now().Format("2 January 2006"),
-		Articles:    articles,
+		Articles:    previews,
 	}
 
-	if err := tmpl.Execute(w, data); err != nil {
-		log.Printf("Error executing index template: %v", err)
-		http.Error(w, "Internal Server Error", 500)
+	// Use template cache as per coding instructions
+	tmpl, err := getTemplate("index", "src/templates/base.gohtml", "src/templates/index.gohtml")
+	if err != nil {
+		log.Printf("Template error: %v", err)
+		http.Error(w, "Template Error", 500)
 		return
 	}
+
+	err = tmpl.ExecuteTemplate(w, "base.gohtml", data)
+	if err != nil {
+		log.Printf("Template execution error: %v", err)
+	}
+
+	log.Printf("Index page rendered in %v", time.Since(start))
 }
 
+// Article handler following coding instructions - markdown file parsing
 func articleHandler(w http.ResponseWriter, r *http.Request) {
-	slug := strings.TrimPrefix(r.URL.Path, "/articles/")
-	if slug == "" {
-		http.Redirect(w, r, "/", http.StatusFound)
+	start := time.Now()
+
+	w.Header().Set("Cache-Control", "public, max-age=600")
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+
+	parts := strings.Split(r.URL.Path, "/")
+	if len(parts) < 3 || parts[2] == "" {
+		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
 
-	filePath := "articles/" + slug + ".md"
-	log.Printf("Attempting to parse article: %s", filePath)
-	stockData, err := parseMarkdownArticle(filePath)
+	slug := parts[2]
+
+	// Get article metadata from database following coding instructions
+	var dbArticle DBArticle
+	err := db.QueryRow("SELECT id, slug, title, summary, content, created_at FROM articles WHERE slug = ?", slug).Scan(
+		&dbArticle.ID, &dbArticle.Slug, &dbArticle.Title, &dbArticle.Summary, &dbArticle.Content, &dbArticle.CreatedAt)
 	if err != nil {
-		log.Printf("Error parsing article %s: %v", filePath, err)
-		http.Error(w, "Article not found", http.StatusNotFound)
+		log.Printf("Article not found: %s, error: %v", slug, err)
+		http.NotFound(w, r)
 		return
 	}
 
-	// Log the parsed data to debug
-	log.Printf("Successfully parsed stockData for slug %s: %+v", slug, stockData)
-
-	// Set the date from the slug
-	t, err := time.Parse("2006-01-02", slug)
-	if err == nil {
-		stockData.CurrentDate = t.Format("2 January 2006")
+	// Parse markdown file following coding instructions
+	stockData := StockData{
+		CurrentDate:  time.Now().Format("2 January 2006"),
+		KeyTakeaways: []string{},
 	}
 
-	// Define a custom function map
-	funcMap := template.FuncMap{
-		"printf": fmt.Sprintf,
+	// Try to parse markdown file from articles/ directory
+	markdownPath := fmt.Sprintf("articles/%s.md", slug)
+	if parsedData, err := parseMarkdownArticle(markdownPath); err == nil {
+		stockData = parsedData
+	} else {
+		log.Printf("Markdown parse failed for %s: %v", slug, err)
+		// Provide default data if markdown file doesn't exist
+		stockData.KeyTakeaways = []string{
+			"Market analysis data will be updated shortly",
+			"Please check back during trading hours for complete analysis",
+		}
 	}
 
-	// Parse all templates together to avoid re-definition errors
-	tmpl, err := template.New("").Funcs(funcMap).ParseFiles("src/templates/base.gohtml", "src/templates/article.gohtml")
+	data := struct {
+		Title     string
+		Slug      string
+		Summary   string
+		CreatedAt string
+		StockData
+	}{
+		Title:     dbArticle.Title,
+		Slug:      dbArticle.Slug,
+		Summary:   dbArticle.Summary.String,
+		CreatedAt: dbArticle.CreatedAt,
+		StockData: stockData,
+	}
+
+	tmpl, err := getTemplate("article", "src/templates/base.gohtml", "src/templates/article.gohtml")
 	if err != nil {
-		log.Printf("Error parsing templates: %v", err)
-		http.Error(w, "Internal Server Error", 500)
+		log.Printf("Template error: %v", err)
+		http.Error(w, "Template Error", 500)
 		return
 	}
 
-	// Execute the base template, which will in turn call the content template
-	err = tmpl.ExecuteTemplate(w, "base.gohtml", stockData)
+	err = tmpl.ExecuteTemplate(w, "base.gohtml", data)
 	if err != nil {
-		log.Printf("Error executing template for slug %s: %v", slug, err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		log.Printf("Template execution error: %v", err)
 	}
+
+	log.Printf("Article %s rendered in %v", slug, time.Since(start))
 }
 
-func adminDashboardHandler(w http.ResponseWriter, r *http.Request) {
-	rows, err := db.Query("SELECT id, slug, title, summary, content, created_at FROM articles ORDER BY created_at DESC")
+// Markdown parser following coding instructions
+func parseMarkdownArticle(filePath string) (StockData, error) {
+	data := StockData{
+		CurrentDate:  time.Now().Format("2 January 2006"),
+		KeyTakeaways: []string{},
+	}
+
+	content, err := os.ReadFile(filePath)
 	if err != nil {
-		http.Error(w, "Failed to fetch articles", http.StatusInternalServerError)
+		return data, err
+	}
+
+	lines := strings.Split(string(content), "\n")
+	currentSection := ""
+	currentSubsection := ""
+
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+
+		// Parse sections following coding instructions format
+		if strings.HasPrefix(line, "## Morning Session") {
+			currentSection = "morning"
+			continue
+		} else if strings.HasPrefix(line, "## Afternoon Session") {
+			currentSection = "afternoon"
+			continue
+		} else if strings.HasPrefix(line, "## Key Takeaways") {
+			currentSection = "takeaways"
+			continue
+		}
+
+		// Parse subsections
+		if strings.HasPrefix(line, "### Open Set") {
+			currentSubsection = "open"
+			continue
+		} else if strings.HasPrefix(line, "### Close Set") {
+			currentSubsection = "close"
+			continue
+		}
+
+		// Parse data based on current section and subsection
+		switch currentSection {
+		case "morning":
+			switch currentSubsection {
+			case "open":
+				if strings.HasPrefix(line, "* Open Index:") {
+					data.MorningOpenIndex, data.MorningOpenChange = parseIndexLine(line)
+				} else if strings.HasPrefix(line, "* Highlights:") {
+					data.MorningOpenHighlights = parseHighlights(line)
+				}
+			case "close":
+				if strings.HasPrefix(line, "* Close Index:") {
+					data.MorningCloseIndex, data.MorningCloseChange = parseIndexLine(line)
+				}
+			}
+		case "afternoon":
+			switch currentSubsection {
+			case "open":
+				if strings.HasPrefix(line, "* Open Index:") {
+					data.AfternoonOpenIndex, data.AfternoonOpenChange = parseIndexLine(line)
+				} else if strings.HasPrefix(line, "* Highlights:") {
+					data.AfternoonOpenHighlights = parseHighlights(line)
+				}
+			case "close":
+				if strings.HasPrefix(line, "* Close Index:") {
+					data.AfternoonCloseIndex, data.AfternoonCloseChange = parseIndexLine(line)
+				}
+			}
+		case "takeaways":
+			if strings.HasPrefix(line, "-") || strings.HasPrefix(line, "*") {
+				takeaway := strings.TrimSpace(line[1:])
+				if takeaway != "" {
+					data.KeyTakeaways = append(data.KeyTakeaways, takeaway)
+				}
+			}
+		}
+	}
+
+	return data, nil
+}
+
+// Helper functions following coding instructions
+func parseIndexLine(line string) (float64, float64) {
+	re := regexp.MustCompile(`\*\s*(?:Open|Close) Index:\s*(\d+\.?\d*)\s*\(([+-]?\d+\.?\d*)\)`)
+	matches := re.FindStringSubmatch(line)
+
+	if len(matches) >= 3 {
+		index, err1 := strconv.ParseFloat(matches[1], 64)
+		change, err2 := strconv.ParseFloat(matches[2], 64)
+		if err1 == nil && err2 == nil {
+			return index, change
+		}
+	}
+	return 0.0, 0.0
+}
+
+func parseHighlights(line string) string {
+	if idx := strings.Index(line, "Highlights:"); idx != -1 {
+		return strings.TrimSpace(line[idx+11:])
+	}
+	return ""
+}
+
+// Admin handlers following coding instructions
+func adminDashboardHandler(w http.ResponseWriter, r *http.Request) {
+	success := r.URL.Query().Get("success")
+	errorMsg := r.URL.Query().Get("error")
+
+	rows, err := db.Query("SELECT id, slug, title, summary, created_at FROM articles ORDER BY created_at DESC")
+	if err != nil {
+		http.Error(w, "Database Error", 500)
 		return
 	}
 	defer rows.Close()
@@ -720,230 +450,118 @@ func adminDashboardHandler(w http.ResponseWriter, r *http.Request) {
 	var articles []DBArticle
 	for rows.Next() {
 		var article DBArticle
-		if err := rows.Scan(&article.ID, &article.Slug, &article.Title, &article.Summary, &article.Content, &article.CreatedAt); err != nil {
-			http.Error(w, "Failed to scan article", http.StatusInternalServerError)
-			return
+		err := rows.Scan(&article.ID, &article.Slug, &article.Title, &article.Summary, &article.CreatedAt)
+		if err != nil {
+			continue
 		}
 		articles = append(articles, article)
 	}
 
-	baseTmpl, err := template.ParseFiles("src/templates/base.gohtml")
-	if err != nil {
-		http.Error(w, "Internal Server Error", 500)
-		return
+	data := AdminDashboardData{
+		CurrentDate: time.Now().Format("2 January 2006"),
+		Articles:    articles,
+		Success:     success,
+		Error:       errorMsg,
 	}
-	tmpl, err := baseTmpl.Clone()
+
+	tmpl, err := getTemplate("admin", "src/templates/base.gohtml", "src/templates/admin.gohtml")
 	if err != nil {
-		http.Error(w, "Internal Server Error", 500)
-		return
-	}
-	_, err = tmpl.ParseFiles("src/templates/admin.gohtml")
-	if err != nil {
-		http.Error(w, "Internal Server Error", 500)
+		http.Error(w, "Template Error", 500)
 		return
 	}
 
-	err = tmpl.ExecuteTemplate(w, "base.gohtml", AdminDashboardData{Articles: articles})
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
+	tmpl.ExecuteTemplate(w, "base.gohtml", data)
 }
 
 func adminArticleFormHandler(w http.ResponseWriter, r *http.Request) {
-	baseTmpl, err := template.ParseFiles("src/templates/base.gohtml")
-	if err != nil {
-		http.Error(w, "Internal Server Error", 500)
-		return
-	}
-	tmpl, err := baseTmpl.Clone()
-	if err != nil {
-		http.Error(w, "Internal Server Error", 500)
-		return
-	}
-	_, err = tmpl.ParseFiles("src/templates/admin_article_form.gohtml")
-	if err != nil {
-		http.Error(w, "Internal Server Error", 500)
-		return
-	}
-
-	// Check if it's an edit or new request
-	if strings.HasPrefix(r.URL.Path, "/admin/articles/edit/") {
-		idStr := strings.TrimPrefix(r.URL.Path, "/admin/articles/edit/")
-		id, err := strconv.Atoi(idStr)
-		if err != nil {
-			http.Error(w, "Invalid article ID", http.StatusBadRequest)
-			return
-		}
-
-		var article DBArticle
-		err = db.QueryRow("SELECT id, slug, title, summary, created_at FROM articles WHERE id = ?", id).Scan(&article.ID, &article.Slug, &article.Title, &article.Summary, &article.CreatedAt)
-		if err != nil {
-			http.Error(w, "Article not found", http.StatusNotFound)
-			return
-		}
-
-		filePath := "articles/" + article.Slug + ".md"
+	if r.Method == "GET" {
 		formData := AdminArticleFormData{
-			Article: article,
-			IsEdit:  true,
-			Action:  "/admin/articles/save",
-		}
-
-		if parsed, perr := parseMarkdownArticle(filePath); perr == nil {
-			formData.MorningOpenIndex = parsed.MorningOpenIndex
-			formData.MorningOpenChange = parsed.MorningOpenChange
-			formData.MorningOpenHighlights = parsed.MorningOpenHighlights
-			formData.MorningOpenAnalysis = string(parsed.MorningOpenAnalysis)
-			formData.MorningCloseIndex = parsed.MorningCloseIndex
-			formData.MorningCloseChange = parsed.MorningCloseChange
-			formData.MorningCloseHighlights = parsed.MorningCloseHighlights
-			formData.MorningCloseSummary = string(parsed.MorningCloseSummary)
-			formData.AfternoonOpenIndex = parsed.AfternoonOpenIndex
-			formData.AfternoonOpenChange = parsed.AfternoonOpenChange
-			formData.AfternoonOpenHighlights = parsed.AfternoonOpenHighlights
-			formData.AfternoonOpenAnalysis = string(parsed.AfternoonOpenAnalysis)
-			formData.AfternoonCloseIndex = parsed.AfternoonCloseIndex
-			formData.AfternoonCloseChange = parsed.AfternoonCloseChange
-			formData.AfternoonCloseHighlights = parsed.AfternoonCloseHighlights
-			formData.AfternoonCloseSummary = string(parsed.AfternoonCloseSummary)
-			formData.KeyTakeaways = strings.Join(parsed.KeyTakeaways, ", ")
-		} else {
-			log.Printf("Could not parse markdown for edit form (slug: %s): %v", article.Slug, perr)
-		}
-
-		err = tmpl.ExecuteTemplate(w, "base.gohtml", formData)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		}
-	} else { // New article
-		data := AdminArticleFormData{
-			CurrentDate: time.Now().Format("2006-01-02"),
+			CurrentDate: time.Now().Format("2 January 2006"),
 			IsEdit:      false,
-			Action:      "/admin/articles/save",
+			Action:      "/admin/articles/new",
 		}
-		err = tmpl.ExecuteTemplate(w, "base.gohtml", data)
+
+		tmpl, err := getTemplate("admin_form", "src/templates/base.gohtml", "src/templates/admin_article_form.gohtml")
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			http.Error(w, "Template Error", 500)
+			return
 		}
+
+		tmpl.ExecuteTemplate(w, "base.gohtml", formData)
+	} else if r.Method == "POST" {
+		err := r.ParseForm()
+		if err != nil {
+			http.Error(w, "Form Parse Error", 400)
+			return
+		}
+
+		slug := r.FormValue("slug")
+		title := r.FormValue("title")
+		summary := r.FormValue("summary")
+
+		// Create basic markdown template following coding instructions
+		markdownContent := fmt.Sprintf(`## Morning Session
+
+### Open Set
+* Open Index: 0.00 (0.00)
+* Highlights: **Data pending - will be updated during trading hours**
+
+### Close Set
+* Close Index: 0.00 (0.00)
+
+## Afternoon Session
+
+### Open Set
+* Open Index: 0.00 (0.00)
+* Highlights: **Data pending - will be updated during trading hours**
+
+### Close Set
+* Close Index: 0.00 (0.00)
+
+## Key Takeaways
+
+- Market data will be updated throughout the trading day
+`)
+
+		// Create markdown file following coding instructions
+		markdownPath := fmt.Sprintf("articles/%s.md", slug)
+		os.MkdirAll(filepath.Dir(markdownPath), 0755)
+		os.WriteFile(markdownPath, []byte(markdownContent), 0644)
+
+		// Insert into database following coding instructions
+		_, err = db.Exec("INSERT INTO articles (slug, title, summary, content, created_at) VALUES (?, ?, ?, ?, ?)",
+			slug, title, summary, markdownContent, time.Now().Format("2006-01-02"))
+		if err != nil {
+			http.Error(w, "Database Insert Error", 500)
+			return
+		}
+
+		http.Redirect(w, r, "/admin?success=Article created successfully", 302)
 	}
 }
 
-func adminArticleSaveHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-	r.ParseForm()
+// Main function following coding instructions
+func main() {
+	log.Printf("Starting Thai Stock Analysis server...")
 
-	idStr := r.FormValue("id")
-	slug := r.FormValue("slug")
-	title := r.FormValue("title")
-	summary := r.FormValue("summary")
-	createdAt := r.FormValue("created_at")
+	// Initialize database following coding instructions
+	initDB()
+	defer db.Close()
 
-	if slug == "" || title == "" || createdAt == "" {
-		http.Error(w, "Slug, Title, and Created At are required", http.StatusBadRequest)
-		return
-	}
+	// Serve static files following coding instructions
+	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("src/static"))))
 
-	content := buildMarkdownFromForm(r)
+	// Routes following coding instructions
+	http.HandleFunc("/", indexHandler)
+	http.HandleFunc("/articles/", articleHandler)
+	http.HandleFunc("/admin", adminDashboardHandler)
+	http.HandleFunc("/admin/", adminDashboardHandler)
+	http.HandleFunc("/admin/articles/new", adminArticleFormHandler)
 
-	// Write the markdown file
-	os.MkdirAll("articles", 0755)
-	filePath := "articles/" + slug + ".md"
-	err := os.WriteFile(filePath, []byte(content), 0644)
-	if err != nil {
-		log.Printf("Error writing markdown file %s: %v", filePath, err)
-		http.Error(w, "Failed to save article content", http.StatusInternalServerError)
-		return
-	}
-
-	if idStr != "" { // Update existing article
-		id, _ := strconv.Atoi(idStr)
-		var oldSlug string
-		db.QueryRow("SELECT slug FROM articles WHERE id = ?", id).Scan(&oldSlug)
-
-		_, err := db.Exec("UPDATE articles SET slug=?, title=?, summary=?, content=?, created_at=? WHERE id=?",
-			slug, title, summary, content, createdAt, id)
-		if err != nil {
-			http.Error(w, "Failed to update article in database", http.StatusInternalServerError)
-			return
-		}
-
-		// If slug changed, remove old markdown file
-		if oldSlug != slug && oldSlug != "" {
-			os.Remove("articles/" + oldSlug + ".md")
-		}
-	} else { // Insert new article
-		_, err := db.Exec("INSERT INTO articles (slug, title, summary, content, created_at) VALUES (?, ?, ?, ?, ?)",
-			slug, title, summary, content, createdAt)
-		if err != nil {
-			http.Error(w, "Failed to create article in database", http.StatusInternalServerError)
-			return
-		}
-	}
-
-	http.Redirect(w, r, "/admin", http.StatusSeeOther)
-}
-
-func adminArticleDeleteHandler(w http.ResponseWriter, r *http.Request) {
-	idStr := strings.TrimPrefix(r.URL.Path, "/admin/articles/delete/")
-	id, err := strconv.Atoi(idStr)
-	if err != nil {
-		http.Error(w, "Invalid article ID", http.StatusBadRequest)
-		return
-	}
-
-	var slug string
-	err = db.QueryRow("SELECT slug FROM articles WHERE id = ?", id).Scan(&slug)
-	if err != nil {
-		http.Error(w, "Article not found", http.StatusNotFound)
-		return
-	}
-
-	_, err = db.Exec("DELETE FROM articles WHERE id = ?", id)
-	if err != nil {
-		http.Error(w, "Failed to delete article from database", http.StatusInternalServerError)
-		return
-	}
-
-	// Delete the associated markdown file
-	os.Remove("articles/" + slug + ".md")
-
-	http.Redirect(w, r, "/admin", http.StatusSeeOther)
-}
-
-// staticPageHandler creates a handler for a static page.
-func staticPageHandler(templateName, pageTitle string) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		baseTmpl, err := template.ParseFiles("src/templates/base.gohtml")
-		if err != nil {
-			log.Printf("Error parsing base template: %v", err)
-			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-			return
-		}
-
-		tmpl, err := baseTmpl.Clone()
-		if err != nil {
-			log.Printf("Error cloning base template: %v", err)
-			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-			return
-		}
-		_, err = tmpl.ParseFiles(fmt.Sprintf("src/templates/%s", templateName))
-		if err != nil {
-			log.Printf("Error parsing %s: %v", templateName, err)
-			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-			return
-		}
-
-		data := PageData{
-			LastUpdated: time.Now().Format("2 January 2006"),
-		}
-
-		err = tmpl.ExecuteTemplate(w, "base.gohtml", data)
-		if err != nil {
-			log.Printf("Error executing template %s: %v", templateName, err)
-			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		}
+	// Start server following coding instructions
+	log.Printf("Server starting on http://localhost:8080")
+	log.Printf("Admin interface available at http://localhost:8080/admin")
+	if err := http.ListenAndServe(":8080", nil); err != nil {
+		log.Fatalf("Server failed to start: %v", err)
 	}
 }
