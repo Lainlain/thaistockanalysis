@@ -1,0 +1,82 @@
+{{template "base.gohtml" .}}
+
+{{define "title"}}About Us - Thai Stock Analysis{{end}}
+{{define "description"}}Learn more about Thai Stock Analysis, our mission, our team, and our commitment to providing high-quality stock market insights.{{end}}
+{{define "og_title"}}About Us - Thai Stock Analysis{{end}}
+{{define "og_description"}}Learn more about Thai Stock Analysis, our mission, our team, and our commitment to providing high-quality stock market insights.{{end}}
+
+{{define "content"}}
+<div class="bg-white rounded-2xl shadow-lg overflow-hidden p-6 sm:p-8 md:p-10 border border-gray-100">
+    <header class="text-center mb-12">
+        <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-gray-900 mb-4 leading-tight">
+            About Thai Stock Analysis
+        </h1>
+        <p class="text-lg sm:text-xl text-gray-600 max-w-3xl mx-auto">
+            Your trusted source for daily, in-depth analysis of the Thai stock market. We are dedicated to empowering investors with clear, concise, and actionable insights.
+        </p>
+    </header>
+
+    <!-- Mission Section -->
+    <section class="mb-12">
+        <div class="max-w-4xl mx-auto">
+            <h2 class="text-3xl font-bold text-primary-800 mb-6 text-center">Our Mission</h2>
+            <p class="text-lg text-gray-700 leading-relaxed text-center">
+                Our mission is to demystify the Thai stock market for both novice and experienced investors. We believe that access to high-quality, unbiased analysis is crucial for making informed investment decisions. We strive to provide daily reports that are not only data-driven but also easy to understand, helping you navigate the complexities of the market with confidence.
+            </p>
+        </div>
+    </section>
+
+    <!-- Our Team Section -->
+    <section class="mb-12 bg-gray-50 p-8 rounded-xl border border-gray-200">
+        <h2 class="text-3xl font-bold text-primary-800 mb-8 text-center">Meet the Team</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+            <!-- Team Member 1 -->
+            <div class="text-center">
+                <div class="w-32 h-32 rounded-full mx-auto mb-4 bg-gray-300 shadow-md">
+                    <!-- Placeholder for team member photo -->
+                </div>
+                <h3 class="text-xl font-semibold text-gray-900">John Doe</h3>
+                <p class="text-primary-600">Lead Analyst</p>
+                <p class="text-sm text-gray-600 mt-2">With over 15 years of experience in financial markets, John leads our analytical team, specializing in macroeconomic trends and equity valuation.</p>
+            </div>
+            <!-- Team Member 2 -->
+            <div class="text-center">
+                <div class="w-32 h-32 rounded-full mx-auto mb-4 bg-gray-300 shadow-md">
+                    <!-- Placeholder for team member photo -->
+                </div>
+                <h3 class="text-xl font-semibold text-gray-900">Jane Smith</h3>
+                <p class="text-primary-600">Data Scientist</p>
+                <p class="text-sm text-gray-600 mt-2">Jane is the brains behind our data models, using machine learning to identify patterns and predict market movements.</p>
+            </div>
+            <!-- Team Member 3 -->
+            <div class="text-center">
+                <div class="w-32 h-32 rounded-full mx-auto mb-4 bg-gray-300 shadow-md">
+                    <!-- Placeholder for team member photo -->
+                </div>
+                <h3 class="text-xl font-semibold text-gray-900">Sam Wilson</h3>
+                <p class="text-primary-600">Content Strategist</p>
+                <p class="text-sm text-gray-600 mt-2">Sam ensures our analysis is presented clearly and effectively, making complex topics accessible to all our readers.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Our Values Section -->
+    <section>
+        <h2 class="text-3xl font-bold text-primary-800 mb-8 text-center">Our Core Values</h2>
+        <div class="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div class="bg-blue-50 p-6 rounded-lg border border-blue-100">
+                <h3 class="text-xl font-semibold text-blue-800 mb-3">Integrity</h3>
+                <p class="text-gray-700">We are committed to providing unbiased and honest analysis. Our readers' trust is our most valuable asset.</p>
+            </div>
+            <div class="bg-green-50 p-6 rounded-lg border border-green-100">
+                <h3 class="text-xl font-semibold text-green-800 mb-3">Clarity</h3>
+                <p class="text-gray-700">We break down complex financial data into clear, understandable insights that you can use.</p>
+            </div>
+            <div class="bg-purple-50 p-6 rounded-lg border border-purple-100">
+                <h3 class="text-xl font-semibold text-purple-800 mb-3">Consistency</h3>
+                <p class="text-gray-700">We deliver timely and reliable market analysis every trading day, so you never miss a beat.</p>
+            </div>
+        </div>
+    </section>
+</div>
+{{end}}

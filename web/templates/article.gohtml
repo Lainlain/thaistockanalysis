@@ -1,0 +1,280 @@
+{{template "base.gohtml" .}}
+
+{{define "title"}}{{.Title}} - Thai Stock Analysis{{end}}
+
+{{define "description"}}Detailed analysis of Thai stock market performance for {{.CurrentDate}} including SET index movements and sector highlights.{{end}}
+
+{{define "content"}}
+<div class="min-h-screen bg-gray-50">
+    <!-- Compact Container -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-6">
+        <!-- Page Title -->
+        <div class="mb-6">
+            <h1 class="text-2xl lg:text-3xl font-bold text-gray-900">{{.Title}}</h1>
+        </div>
+
+        <!-- Morning Session -->
+        <div class="bg-white rounded-lg border border-gray-200 mb-4">
+            <div class="bg-gradient-to-r from-blue-50 to-blue-100 px-4 py-3 border-b border-blue-200">
+                <h2 class="text-lg font-semibold text-blue-900 flex items-center">
+                    <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"></path>
+                    </svg>
+                    Morning Session
+                </h2>
+            </div>
+            <div class="p-4">
+                <!-- Morning Metrics Row -->
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <!-- Morning Open -->
+                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded">
+                        <div>
+                            <div class="text-xs text-gray-500 uppercase tracking-wide font-medium">Open</div>
+                            {{if gt .MorningOpenIndex 0.0}}
+                            <div class="text-xl font-bold text-gray-900">{{printf "%.2f" .MorningOpenIndex}}</div>
+                            <div class="flex items-center text-sm">
+                                {{if gt .MorningOpenChange 0.0}}
+                                    <span class="text-green-600 font-semibold">+{{printf "%.2f" .MorningOpenChange}}</span>
+                                    <svg class="w-3 h-3 ml-1 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M5.293 7.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L10 4.414 6.707 7.707a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
+                                    </svg>
+                                {{else if lt .MorningOpenChange 0.0}}
+                                    <span class="text-red-600 font-semibold">{{printf "%.2f" .MorningOpenChange}}</span>
+                                    <svg class="w-3 h-3 ml-1 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M14.707 12.293a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L10 15.586l3.293-3.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                    </svg>
+                                {{else}}
+                                    <span class="text-gray-600 font-semibold">{{printf "%.2f" .MorningOpenChange}}</span>
+                                {{end}}
+                            </div>
+                            {{else}}
+                            <div class="text-xl font-bold text-gray-400">--</div>
+                            <div class="text-xs text-amber-600">9:30 AM</div>
+                            {{end}}
+                        </div>
+                        {{if gt .MorningOpenIndex 0.0}}
+                            <div class="w-2 h-2 bg-green-500 rounded-full"></div>
+                        {{else}}
+                            <div class="w-2 h-2 bg-gray-300 rounded-full animate-pulse"></div>
+                        {{end}}
+                    </div>
+
+                    <!-- Morning Close -->
+                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded">
+                        <div>
+                            <div class="text-xs text-gray-500 uppercase tracking-wide font-medium">Close</div>
+                            {{if gt .MorningCloseIndex 0.0}}
+                            <div class="text-xl font-bold text-gray-900">{{printf "%.2f" .MorningCloseIndex}}</div>
+                            <div class="flex items-center text-sm">
+                                {{if gt .MorningCloseChange 0.0}}
+                                    <span class="text-green-600 font-semibold">+{{printf "%.2f" .MorningCloseChange}}</span>
+                                    <svg class="w-3 h-3 ml-1 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M5.293 7.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L10 4.414 6.707 7.707a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
+                                    </svg>
+                                {{else if lt .MorningCloseChange 0.0}}
+                                    <span class="text-red-600 font-semibold">{{printf "%.2f" .MorningCloseChange}}</span>
+                                    <svg class="w-3 h-3 ml-1 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M14.707 12.293a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L10 15.586l3.293-3.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                    </svg>
+                                {{else}}
+                                    <span class="text-gray-600 font-semibold">{{printf "%.2f" .MorningCloseChange}}</span>
+                                {{end}}
+                            </div>
+                            {{else}}
+                            <div class="text-xl font-bold text-gray-400">--</div>
+                            <div class="text-xs text-amber-600">12:30 PM</div>
+                            {{end}}
+                        </div>
+                        {{if gt .MorningCloseIndex 0.0}}
+                            <div class="w-2 h-2 bg-green-500 rounded-full"></div>
+                        {{else}}
+                            <div class="w-2 h-2 bg-gray-300 rounded-full animate-pulse"></div>
+                        {{end}}
+                    </div>
+                </div>
+
+                <!-- Morning Highlights -->
+                {{if .MorningOpenHighlights}}
+                <div class="mb-4">
+                    <div class="text-xs text-gray-500 uppercase tracking-wide font-medium mb-2">Highlights</div>
+                    <div class="bg-blue-50 rounded p-3 text-sm text-gray-700">{{html (markdownToHTML .MorningOpenHighlights)}}</div>
+                </div>
+                {{end}}
+
+                <!-- Morning Analysis -->
+                <div class="grid md:grid-cols-2 gap-4">
+                    {{if .MorningOpenAnalysis}}
+                    <div>
+                        <div class="text-xs text-gray-500 uppercase tracking-wide font-medium mb-2">Open Analysis</div>
+                        <div class="prose prose-sm max-w-none text-gray-700 text-sm">{{.MorningOpenAnalysis}}</div>
+                    </div>
+                    {{end}}
+                    {{if .MorningCloseSummary}}
+                    <div>
+                        <div class="text-xs text-gray-500 uppercase tracking-wide font-medium mb-2">Close Summary</div>
+                        <div class="prose prose-sm max-w-none text-gray-700 text-sm">{{.MorningCloseSummary}}</div>
+                    </div>
+                    {{end}}
+                </div>
+            </div>
+        </div>
+
+        <!-- Evening Session -->
+        <div class="bg-white rounded-lg border border-gray-200 mb-4">
+            <div class="bg-gradient-to-r from-orange-50 to-orange-100 px-4 py-3 border-b border-orange-200">
+                <h2 class="text-lg font-semibold text-orange-900 flex items-center">
+                    <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" clip-rule="evenodd"></path>
+                    </svg>
+                    Evening Session
+                </h2>
+            </div>
+            <div class="p-4">
+                <!-- Evening Metrics Row -->
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <!-- Afternoon Open -->
+                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded">
+                        <div>
+                            <div class="text-xs text-gray-500 uppercase tracking-wide font-medium">Open</div>
+                            {{if gt .AfternoonOpenIndex 0.0}}
+                            <div class="text-xl font-bold text-gray-900">{{printf "%.2f" .AfternoonOpenIndex}}</div>
+                            <div class="flex items-center text-sm">
+                                {{if gt .AfternoonOpenChange 0.0}}
+                                    <span class="text-green-600 font-semibold">+{{printf "%.2f" .AfternoonOpenChange}}</span>
+                                    <svg class="w-3 h-3 ml-1 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M5.293 7.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L10 4.414 6.707 7.707a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
+                                    </svg>
+                                {{else if lt .AfternoonOpenChange 0.0}}
+                                    <span class="text-red-600 font-semibold">{{printf "%.2f" .AfternoonOpenChange}}</span>
+                                    <svg class="w-3 h-3 ml-1 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M14.707 12.293a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L10 15.586l3.293-3.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                    </svg>
+                                {{else}}
+                                    <span class="text-gray-600 font-semibold">{{printf "%.2f" .AfternoonOpenChange}}</span>
+                                {{end}}
+                            </div>
+                            {{else}}
+                            <div class="text-xl font-bold text-gray-400">--</div>
+                            <div class="text-xs text-amber-600">2:30 PM</div>
+                            {{end}}
+                        </div>
+                        {{if gt .AfternoonOpenIndex 0.0}}
+                            <div class="w-2 h-2 bg-green-500 rounded-full"></div>
+                        {{else}}
+                            <div class="w-2 h-2 bg-gray-300 rounded-full animate-pulse"></div>
+                        {{end}}
+                    </div>
+
+                    <!-- Market Close -->
+                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded">
+                        <div>
+                            <div class="text-xs text-gray-500 uppercase tracking-wide font-medium">Close</div>
+                            {{if gt .AfternoonCloseIndex 0.0}}
+                            <div class="text-xl font-bold text-gray-900">{{printf "%.2f" .AfternoonCloseIndex}}</div>
+                            <div class="flex items-center text-sm">
+                                {{if gt .AfternoonCloseChange 0.0}}
+                                    <span class="text-green-600 font-semibold">+{{printf "%.2f" .AfternoonCloseChange}}</span>
+                                    <svg class="w-3 h-3 ml-1 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M5.293 7.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L10 4.414 6.707 7.707a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
+                                    </svg>
+                                {{else if lt .AfternoonCloseChange 0.0}}
+                                    <span class="text-red-600 font-semibold">{{printf "%.2f" .AfternoonCloseChange}}</span>
+                                    <svg class="w-3 h-3 ml-1 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M14.707 12.293a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L10 15.586l3.293-3.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                    </svg>
+                                {{else}}
+                                    <span class="text-gray-600 font-semibold">{{printf "%.2f" .AfternoonCloseChange}}</span>
+                                {{end}}
+                            </div>
+                            {{else}}
+                            <div class="text-xl font-bold text-gray-400">--</div>
+                            <div class="text-xs text-amber-600">4:30 PM</div>
+                            {{end}}
+                        </div>
+                        {{if gt .AfternoonCloseIndex 0.0}}
+                            <div class="w-2 h-2 bg-green-500 rounded-full"></div>
+                        {{else}}
+                            <div class="w-2 h-2 bg-gray-300 rounded-full animate-pulse"></div>
+                        {{end}}
+                    </div>
+                </div>
+
+                <!-- Evening Highlights -->
+                {{if .AfternoonOpenHighlights}}
+                <div class="mb-4">
+                    <div class="text-xs text-gray-500 uppercase tracking-wide font-medium mb-2">Highlights</div>
+                    <div class="bg-orange-50 rounded p-3 text-sm text-gray-700">{{html (markdownToHTML .AfternoonOpenHighlights)}}</div>
+                </div>
+                {{end}}
+
+                <!-- Evening Analysis -->
+                <div class="grid md:grid-cols-2 gap-4">
+                    {{if .AfternoonOpenAnalysis}}
+                    <div>
+                        <div class="text-xs text-gray-500 uppercase tracking-wide font-medium mb-2">Open Analysis</div>
+                        <div class="prose prose-sm max-w-none text-gray-700 text-sm">{{.AfternoonOpenAnalysis}}</div>
+                    </div>
+                    {{end}}
+                    {{if .AfternoonCloseSummary}}
+                    <div>
+                        <div class="text-xs text-gray-500 uppercase tracking-wide font-medium mb-2">Close Summary</div>
+                        <div class="prose prose-sm max-w-none text-gray-700 text-sm">{{.AfternoonCloseSummary}}</div>
+                    </div>
+                    {{end}}
+                </div>
+            </div>
+        </div>
+
+        <!-- Key Takeaways -->
+        <div class="bg-white rounded-lg border border-gray-200">
+            <div class="bg-gradient-to-r from-green-50 to-green-100 px-4 py-3 border-b border-green-200">
+                <h2 class="text-lg font-semibold text-green-900 flex items-center">
+                    <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                    </svg>
+                    Key Takeaways
+                </h2>
+            </div>
+            <div class="p-4">
+                {{if .KeyTakeaways}}
+                <div class="space-y-3">
+                    {{range $index, $takeaway := .KeyTakeaways}}
+                    <div class="flex items-start">
+                        <div class="flex-shrink-0 w-5 h-5 bg-green-500 text-white rounded-full flex items-center justify-center text-xs font-bold mr-3 mt-0.5">
+                            {{add $index 1}}
+                        </div>
+                        <p class="text-gray-700 text-sm leading-relaxed">{{$takeaway}}</p>
+                    </div>
+                    {{end}}
+                </div>
+                {{else}}
+                <div class="text-center py-8">
+                    <div class="w-12 h-12 bg-green-100 rounded-xl mx-auto mb-4 flex items-center justify-center">
+                        <svg class="w-6 h-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                    <div class="text-gray-500 font-medium">Key insights coming soon</div>
+                    <div class="text-gray-400 text-sm">Complete analysis available after market close</div>
+                </div>
+                {{end}}
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="mt-6 pt-4 border-t border-gray-200">
+            <div class="flex flex-col sm:flex-row items-center justify-between text-sm">
+                <a href="/" class="inline-flex items-center text-blue-600 hover:text-blue-800 transition-colors mb-2 sm:mb-0">
+                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                    </svg>
+                    Return to Analysis
+                </a>
+                <div class="text-xs text-gray-500">
+                    Updated: {{.CurrentDate}}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{{end}}

@@ -1,0 +1,14 @@
+You are an expert financial analyst for the Thai stock market. 
+Please provide a detailed technical analysis of the current market situation based on the following data:
+
+- SET index is currently at $open_set with a change of $change
+- Key sectors showing movement: $sectors
+
+Please provide your analysis in a few paragraphs that include:
+1. Your interpretation of the current index level and change
+2. Analysis of key sector movements
+3. Potential impact of any relevant external factors
+4. Short-term outlook based on technical indicators
+5. Trends to watch
+
+Your analysis should be authoritative, precise, and insightful. Format your response in simple HTML paragraphs (<p>paragraph</p>).

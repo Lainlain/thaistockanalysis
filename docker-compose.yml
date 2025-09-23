@@ -1,0 +1,69 @@
+version: '3.8'
+
+services:
+  thaistockanalysis:
+    build: .
+    container_name: thaistockanalysis
+    ports:
+      - "7777:7777"
+    volumes:
+      - ./data:/app/data
+      - ./articles:/app/articles
+    environment:
+      - DEBUG_MODE=false
+      - PORT=7777
+      - DATABASE_PATH=/app/data/admin.db
+      - ARTICLES_DIR=/app/articles
+      - TEMPLATE_DIR=/app/web/templates
+      - STATIC_DIR=/app/web/static
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:7777/" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - thaistockanalysis_network
+
+  nginx:
+    image: nginx:alpine
+    container_name: thaistockanalysis_nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/ssl/certs:ro
+      - ./web/static:/usr/share/nginx/html/static:ro
+    depends_on:
+      - thaistockanalysis
+    restart: unless-stopped
+    networks:
+      - thaistockanalysis_network
+
+  # Optional: Database backup service
+  backup:
+    image: alpine:latest
+    container_name: thaistockanalysis_backup
+    volumes:
+      - ./data:/app/data:ro
+      - ./backups:/backups
+    command: >
+      sh -c "
+        while true; do
+          echo 'Creating backup...'
+          tar -czf /backups/backup_$$(date +%Y%m%d_%H%M%S).tar.gz /app/data
+          find /backups -name 'backup_*.tar.gz' -mtime +7 -delete
+          sleep 86400
+        done
+      "
+    restart: unless-stopped
+
+networks:
+  thaistockanalysis_network:
+    driver: bridge
+
+volumes:
+  thaistockanalysis_data:
+    driver: local

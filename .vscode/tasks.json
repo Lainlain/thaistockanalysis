@@ -2,22 +2,201 @@
 	"version": "2.0.0",
 	"tasks": [
 		{
-			"label": "Run Go server",
+			"label": "Run Go Server",
 			"type": "shell",
-			"command": "go run src/main.go",
-			"args": [],
+			"command": "go",
+			"args": [
+				"run",
+				"cmd/server/main.go"
+			],
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
 			"isBackground": true,
-			"problemMatcher": [],
-			"group": "build"
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": false,
+				"panel": "shared",
+				"showReuseMessage": true,
+				"clear": false
+			},
+			"options": {
+				"cwd": "${workspaceFolder}"
+			},
+			"problemMatcher": [
+				{
+					"pattern": [
+						{
+							"regexp": "^(.*):(\\d+):(\\d+):\\s+(warning|error):\\s+(.*)$",
+							"file": 1,
+							"line": 2,
+							"column": 3,
+							"severity": 4,
+							"message": 5
+						}
+					]
+				}
+			]
 		},
 		{
-			"label": "Run Go server",
+			"label": "Build Binary",
 			"type": "shell",
-			"command": "go run src/main.go",
-			"args": [],
-			"isBackground": true,
-			"problemMatcher": [],
-			"group": "build"
+			"command": "go",
+			"args": [
+				"build",
+				"-o",
+				"bin/thaistockanalysis",
+				"cmd/server/main.go"
+			],
+			"group": "build",
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": false,
+				"panel": "shared"
+			},
+			"options": {
+				"cwd": "${workspaceFolder}"
+			}
+		},
+		{
+			"label": "Test All",
+			"type": "shell",
+			"command": "go",
+			"args": [
+				"test",
+				"./..."
+			],
+			"group": "test",
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": false,
+				"panel": "shared"
+			},
+			"options": {
+				"cwd": "${workspaceFolder}"
+			}
+		},
+		{
+			"label": "Test with Coverage",
+			"type": "shell",
+			"command": "go",
+			"args": [
+				"test",
+				"-cover",
+				"./..."
+			],
+			"group": "test",
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": false,
+				"panel": "shared"
+			},
+			"options": {
+				"cwd": "${workspaceFolder}"
+			}
+		},
+		{
+			"label": "Format Code",
+			"type": "shell",
+			"command": "go",
+			"args": [
+				"fmt",
+				"./..."
+			],
+			"group": "build",
+			"presentation": {
+				"echo": true,
+				"reveal": "silent",
+				"focus": false,
+				"panel": "shared"
+			},
+			"options": {
+				"cwd": "${workspaceFolder}"
+			}
+		},
+		{
+			"label": "Lint Code",
+			"type": "shell",
+			"command": "golangci-lint",
+			"args": [
+				"run"
+			],
+			"group": "build",
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": false,
+				"panel": "shared"
+			},
+			"options": {
+				"cwd": "${workspaceFolder}"
+			}
+		},
+		{
+			"label": "Install Dependencies",
+			"type": "shell",
+			"command": "go",
+			"args": [
+				"mod",
+				"tidy"
+			],
+			"group": "build",
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": false,
+				"panel": "shared"
+			},
+			"options": {
+				"cwd": "${workspaceFolder}"
+			}
+		},
+		{
+			"label": "Docker Build",
+			"type": "shell",
+			"command": "docker",
+			"args": [
+				"build",
+				"-t",
+				"thaistockanalysis",
+				"."
+			],
+			"group": "build",
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": false,
+				"panel": "shared"
+			},
+			"options": {
+				"cwd": "${workspaceFolder}"
+			}
+		},
+		{
+			"label": "Docker Run",
+			"type": "shell",
+			"command": "docker",
+			"args": [
+				"run",
+				"-p",
+				"7777:7777",
+				"-v",
+				"${workspaceFolder}/data:/app/data",
+				"thaistockanalysis"
+			],
+			"group": "build",
+			"dependsOn": "Docker Build",
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": false,
+				"panel": "shared"
+			}
 		}
 	]
 }
