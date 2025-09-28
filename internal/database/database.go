@@ -16,6 +16,18 @@ var DB *sql.DB
 
 // InitDB initializes the database connection and creates necessary tables
 func InitDB(dbPath string) error {
+	// Create directory structure if it doesn't exist
+	if strings.Contains(dbPath, "/") {
+		dbDir := dbPath[:strings.LastIndex(dbPath, "/")]
+		if _, err := os.Stat(dbDir); os.IsNotExist(err) {
+			err := os.MkdirAll(dbDir, 0755)
+			if err != nil {
+				return fmt.Errorf("failed to create database directory '%s': %v", dbDir, err)
+			}
+			log.Printf("📁 Created database directory: %s", dbDir)
+		}
+	}
+
 	var err error
 	DB, err = sql.Open("sqlite3", dbPath)
 	if err != nil {
