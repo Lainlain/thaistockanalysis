@@ -4,86 +4,111 @@ This document provides essential knowledge for AI coding agents to be immediatel
 
 ## 1. Big Picture Architecture
 
-The application is a performance-optimized Go web server that provides Thai stock market analysis. It serves public-facing article pages and an admin interface for managing articles.
+The application is a high-performance Go web server providing Thai stock market analysis with a **dual architecture**:
 
--   **Language & Framework:** Go 1.24.6, with `net/http` for routing.
--   **Performance Design:** Heavy emphasis on caching - template cache, markdown cache with expiry, and fast database-only index loading.
--   **Templating:** Uses Go's built-in `html/template` package with custom functions (`printf`, `html`, `add`, `markdownToHTML`). Templates in `src/templates/` use `base.gohtml` as the main layout.
--   **Markdown Processing:** `github.com/gomarkdown/markdown` converts markdown to HTML with mutex-protected caching (5-minute expiry).
--   **Database:** SQLite via `github.com/mattn/go-sqlite3`. Database file is `src/admin.db` (note: also exists at root level).
--   **Article Storage:** Dual storage system:
-    1.  **Markdown Files:** Detailed content in `articles/YYYY-MM-DD.md` format, parsed by optimized `parseMarkdownArticle` function.
-    2.  **SQLite Database:** Metadata (slug, title, summary, content, created_at) in `articles` table for fast dashboard queries.
+- **Modern Modular Architecture** (`cmd/server/main.go`): Clean separation of concerns with proper dependency injection
+- **Legacy Monolithic Architecture** (`src/main.go`): Original implementation with all logic centralized (2,300+ lines)
 
-## 2. Key Components and Data Flows
+**Current Recommended Entry Point**: `cmd/server/main.go` with modular structure
 
--   **`src/main.go` (704 lines):**
-    -   **Performance-Critical Functions:**
-        -   `getTemplate()`: Thread-safe template caching with double-check locking pattern.
-        -   `getCachedStockData()`: Markdown parsing cache with 5-minute expiry using mutex protection.
-        -   `indexHandler()`: "SUPER FAST" database-only queries (no file system access during page load).
-    -   **Data Structures:** `StockData` (complex morning/afternoon session data), `ArticlePreview` (index listings), `DBArticle` (database interaction), template data structs.
-    -   **Caching Infrastructure:** Global `templateCache`, `markdownCache`, `cacheExpiry` maps with `sync.RWMutex` for thread safety.
-    -   **Debug System:** `DEBUG_MODE` constant and `debugLog()` function for production performance.
+**Core Technologies:**
+- **Language**: Go 1.24.6 with `net/http` routing
+- **Database**: SQLite via `github.com/mattn/go-sqlite3`, located at `data/admin.db`
+- **Templates**: Go's `html/template` with Tailwind CSS in `web/templates/`
+- **Caching**: Thread-safe template/markdown caches with 5-minute expiry
+- **Article Storage**: Dual system (markdown files + SQLite metadata)
 
--   **Specialized Markdown Parsing:**
-    -   Extracts structured data from specific headers: `## Morning Session`, `### Open Set`, `### Open Analysis`, etc.
-    -   Parses index values with regex: `(\d+\.?\d*)\s*\(([+-]?\d+\.?\d*)\)` pattern.
-    -   Converts analysis sections to `template.HTML` for safe rendering.
+## 2. Key Components and Data Flow
 
--   **Database Patterns:**
-    -   Auto-initialization with `initDB()` and `seedArticlesTable()`.
-    -   Dynamic column addition (`content` column migration logic).
-    -   `addMissingArticlesToDB()` syncs filesystem articles to database on startup.
+### Modern Architecture (`cmd/server/main.go`)
+- **Entry Point**: `cmd/server/main.go` - Clean server initialization with graceful shutdown
+- **Handlers**: `internal/handlers/handlers.go` - HTTP request handling with dependency injection
+- **Services**: `internal/services/services.go` - Business logic (MarkdownService, TemplateService)
+- **Database**: `internal/database/database.go` - Database operations and migrations
+- **Models**: `internal/models/models.go` - Data structures (`StockData`, `ArticlePreview`, `DBArticle`)
+- **Config**: `configs/config.go` - Environment-based configuration management
 
--   **`articles/` directory:** Contains markdown files (`YYYY-MM-DD.md`) with the detailed stock analysis content.
-
--   **`src/templates/` directory:**
-    -   `base.gohtml`: The main layout template.
-    -   `index.gohtml`: Displays a list of `ArticlePreview` items.
-    -   `article.gohtml`: Displays a single `StockData` article.
-    -   `admin.gohtml`: Admin dashboard, listing `DBArticle` entries from the database.
-    -   `admin_article_form.gohtml`: Form for creating/editing articles.
+### Specialized Data Structures
+- **StockData**: Complex morning/afternoon session data with index values and HTML analysis
+- **ArticlePreview**: Summary view for homepage listings with cached SET index data
+- **Markdown Parsing**: Extracts structured data from headers (`## Morning Session`, `### Open Set`)
+- **Index Parsing**: Regex pattern `(\d+\.?\d*)\s*\(([+-]?\d+\.?\d*)\)` for stock values
 
 ## 3. Critical Developer Workflows
 
--   **Running the application:**
-    ```bash
-    go run src/main.go
-    ```
-    The server will start on `http://localhost:7777` (NOTE: Port changed from 8080 to 7777).
+### Running the Application
+```bash
+# Modern architecture (recommended)
+go run cmd/server/main.go
 
--   **Using VS Code Tasks:** A "Run Go server" task is configured for background execution.
+# Legacy architecture (still functional)
+go run src/main.go
+```
 
--   **Performance Monitoring:**
-    -   Set `DEBUG_MODE = true` in `src/main.go` for detailed logging.
-    -   Template and markdown caches are crucial for performance - clearing them requires restart.
-    -   Index page uses database-only queries for maximum speed.
+### VS Code Tasks (Pre-configured)
+- **"Run Go Server"**: Background server execution
+- **"Build Binary"**: Creates `bin/thaistockanalysis` executable
+- **"Test All"** & **"Test with Coverage"**: Full test suite execution
+- **"Docker Build"** & **"Docker Run"**: Containerized deployment
 
--   **Database Interaction:**
-    -   The `admin.db` SQLite database is automatically initialized and seeded on application startup if it doesn't exist or is empty.
-    -   Database operations (CRUD for articles) are handled directly within the HTTP handlers in `src/main.go` using `database/sql` and `github.com/mattn/go-sqlite3`.
-    -   `addMissingArticlesToDB()` automatically syncs filesystem articles to database on startup.
+### Environment Configuration
+Configure via environment variables or defaults in `configs/config.go`:
+- `PORT=7777` (default)
+- `DATABASE_PATH=data/admin.db`
+- `ARTICLES_DIR=articles`
+- `TEMPLATE_DIR=web/templates`
+- `DEBUG_MODE=false`
 
--   **Article Management (Admin Interface):**
-    -   Access the admin dashboard at `http://localhost:7777/admin`.
-    -   New articles can be added via `http://localhost:7777/admin/articles/new`.
-    -   Existing articles can be edited via `http://localhost:7777/admin/articles/edit/{id}`.
-    -   Creating new articles automatically generates markdown files with structured templates.
+### Docker Deployment
+```bash
+# Multi-stage build with SQLite support
+docker build -t thaistockanalysis .
+docker-compose up -d
+```
 
-## 4. Project-Specific Conventions and Patterns
+## 4. Project-Specific Conventions
 
--   **Routing:** All routing and handler logic is centralized in `src/main.go` using `http.HandleFunc`. There is no separate `handlers` package.
--   **Template Loading:** Templates are loaded by cloning `base.gohtml` and then parsing specific page templates into the cloned set. This ensures `base.gohtml` is always the parent.
--   **Markdown Parsing:** The `parseMarkdownArticle` function has specific logic to extract data based on predefined markdown headers (e.g., `## Morning Session`, `### Open Index:`, `* Highlights:`) and converts analysis/summary sections to HTML. Any changes to the markdown article structure will require updates to this parsing logic.
--   **Slug Format:** Article slugs are expected to be in `YYYY-MM-DD` format, matching the markdown file names.
+### Article Management
+- **File Format**: `articles/YYYY-MM-DD.md` (e.g., `2025-09-26.md`)
+- **Auto-Sync**: `database.AddMissingArticlesToDB()` syncs filesystem to database on startup
+- **Admin Interface**: `/admin` for CRUD operations, auto-generates structured markdown
 
-## 5. Integration Points and External Dependencies
+### Markdown Structure (Critical for Parsing)
+```markdown
+# Stock Market Analysis - DD Month YYYY
+## Morning Session
+### Open Set
+* Open Index: 1295.80 (+5.15)
+* Highlights: **Sector info**
+### Open Analysis
+<p>HTML analysis content</p>
+## Afternoon Session
+### Open Set
+* Open Index: 1287.01 (-4.47)
+```
 
--   **`go.mod`:** Lists direct dependencies:
-    -   `github.com/gomarkdown/markdown`: For markdown to HTML conversion.
-    -   `github.com/mattn/go-sqlite3`: SQLite driver for Go.
--   **Static Assets:** Served from the `src/static/` directory under the `/static/` URL path.
+### Caching Strategy
+- **Template Cache**: `sync.RWMutex` protected, global scope
+- **Markdown Cache**: 5-minute expiry with mutex protection
+- **Performance**: Database-only index queries avoid filesystem I/O
+
+## 5. Integration Points
+
+### Dependencies (`go.mod`)
+- `github.com/gomarkdown/markdown`: Markdown to HTML conversion
+- `github.com/mattn/go-sqlite3`: SQLite database driver (requires CGO)
+
+### Static Assets
+- **Location**: `web/static/` (modern) or `src/static/` (legacy)
+- **Tailwind CSS**: Pre-built styles in `/static/css/`
+- **Responsive Design**: Mobile-first approach with card layouts
+
+### Development vs Production
+- **Debug Mode**: Environment variable `DEBUG_MODE=true`
+- **Database**: Auto-migration and seeding on startup
+- **Port**: Default 7777 (changed from 8080)
+- **Docker**: Production-ready with health checks and volume mounts
 
 ---
-Please provide feedback on any unclear or incomplete sections to iterate on these instructions.
+
+**Architecture Migration Note**: When making changes, prefer the modular architecture in `cmd/server/` over the legacy `src/main.go` approach.

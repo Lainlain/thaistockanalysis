@@ -46,6 +46,17 @@ func main() {
 	mux.HandleFunc("/admin/", h.AdminDashboardHandler)
 	mux.HandleFunc("/admin/articles/new", h.AdminArticleFormHandler)
 
+	// About page
+	mux.HandleFunc("/about", h.AboutHandler)
+
+	// Contact page
+	mux.HandleFunc("/contact", h.ContactHandler)
+
+	// Legal pages
+	mux.HandleFunc("/privacy", h.PrivacyHandler)
+	mux.HandleFunc("/terms", h.TermsHandler)
+	mux.HandleFunc("/disclaimer", h.DisclaimerHandler)
+
 	// Create server with timeouts
 	server := &http.Server{
 		Addr:         ":" + cfg.Port,
