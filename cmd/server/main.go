@@ -31,7 +31,7 @@ func main() {
 	database.AddMissingArticlesToDB(cfg.ArticlesDir)
 
 	// Initialize handlers
-	h := handlers.NewHandler(cfg.ArticlesDir, cfg.TemplateDir)
+	h := handlers.NewHandler(cfg.ArticlesDir, cfg.TemplateDir, cfg)
 
 	// Create HTTP server
 	mux := http.NewServeMux()
@@ -51,6 +51,10 @@ func main() {
 
 	// Contact page
 	mux.HandleFunc("/contact", h.ContactHandler)
+
+	// API endpoints for market data
+	mux.HandleFunc("/api/market-data-analysis", h.MarketDataAnalysisHandler)
+	mux.HandleFunc("/api/market-data-close", h.MarketDataCloseHandler)
 
 	// Legal pages
 	mux.HandleFunc("/privacy", h.PrivacyHandler)

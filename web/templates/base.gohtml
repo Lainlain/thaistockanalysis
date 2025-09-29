@@ -6,34 +6,14 @@
 	<meta charset="UTF-8">
 	<meta name="viewport"
 		  content="width=device-width, initial-scale=1.0">
-	<meta name="description"
-		  content="{{block "description" .}}Professional Thai stock market analysis and insights. Daily market reports, investment analysis, and financial news for Thai SET index and stock market trends.{{end}}">
-	<meta name="keywords"
-		  content="Thai stock market, SET index, stock analysis, investment, Thailand finance, market trends, stock news">
-	<meta name="author"
-		  content="Thai Stock Analysis">
-	<meta name="robots"
-		  content="index, follow">
-
-	<!-- Open Graph meta tags for social sharing -->
-	<meta property="og:title"
-		  content="{{block "og_title" .}}Thai Stock Analysis - Professional Market Insights{{end}}">
-	<meta property="og:description"
-		  content="{{block "og_description" .}}Daily Thai stock market analysis with professional insights and investment guidance{{end}}">
-	<meta property="og:type"
-		  content="website">
-	<meta property="og:url"
-		  content="{{block "og_url" .}}https://thaistockanalysis.com{{end}}">
-	<meta property="og:image"
-		  content="/static/logo.png">
+	<meta name="description" content="{{block "description" .}}Professional Thai stock market analysis and insights. Daily market reports, investment analysis, and financial news for Thai SET index and stock market trends.{{end}}">
+	<meta name="keywords" content="Thai stock market, SET index, stock analysis, investment, Thailand finance, market trends, stock news">
+	<meta property="og:image" content="/static/logo.png">
 
 	<!-- Twitter Card meta tags -->
-	<meta name="twitter:card"
-		  content="summary_large_image">
-	<meta name="twitter:title"
-		  content="{{block "twitter_title" .}}Thai Stock Analysis{{end}}">
-	<meta name="twitter:description"
-		  content="{{block "twitter_description" .}}Professional Stock Market Analysis and Insights{{end}}">
+	<meta name="twitter:card" content="summary_large_image">
+	<meta name="twitter:title" content="{{block "twitter_title" .}}Thai Stock Analysis{{end}}">
+	<meta name="twitter:description" content="{{block "twitter_description" .}}Professional Thai stock market analysis and insights{{end}}">
 
 	<title>{{block "title" .}}Thai Stock Analysis - Professional Market Insights & Investment Analysis{{end}}</title>
 
@@ -81,19 +61,26 @@
 	</script>
 
 	<!-- Google Fonts -->
-	<link rel="stylesheet"
-		  href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">
+	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+		  rel="stylesheet">
+
+	<!-- Custom CSS -->
+	<link href="/static/css/admin.css"
+		  rel="stylesheet">
 
 	<!-- Favicon -->
 	<link rel="icon"
 		  type="image/x-icon"
 		  href="/static/favicon.ico">
+	<link rel="apple-touch-icon"
+		  sizes="180x180"
+		  href="/static/apple-touch-icon.png">
 
-	<!-- JSON-LD Structured Data -->
+	<!-- Structured Data for SEO -->
 	<script type="application/ld+json">
     {
         "@context": "https://schema.org",
-        "@type": "Organization",
+        "@type": "WebSite",
         "name": "Thai Stock Analysis",
         "description": "Professional Thai stock market analysis and investment insights",
         "url": "https://thaistockanalysis.com",
@@ -122,20 +109,13 @@
 				<div class="flex-shrink-0">
 					<a href="/"
 					   class="flex items-center space-x-2 text-2xl font-bold text-primary-700 hover:text-primary-800 transition-colors duration-200">
-						<!-- Desktop: Regular logo with title (hidden on mobile) -->
-						<div class="hidden sm:flex items-center space-x-2">
-							<img src="/static/logo.png"
-								 alt="Thai Stock Analysis Logo"
-								 class="w-12 h-12 object-contain">
-							<span>Thai Stock Analysis</span>
-						</div>
-						<!-- Mobile: Regular logo with TSA text (shown only on mobile) -->
-						<div class="block sm:hidden flex items-center space-x-2">
-							<img src="/static/logo.png"
-								 alt="Thai Stock Analysis Logo"
-								 class="w-10 h-10 object-contain">
-							<span class="text-xl font-bold text-primary-700">TSA</span>
-						</div>
+						<svg class="w-8 h-8"
+							 fill="currentColor"
+							 viewBox="0 0 24 24">
+							<path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z" />
+						</svg>
+						<span class="hidden sm:block">Thai Stock Analysis</span>
+						<span class="sm:hidden">TSA</span>
 					</a>
 				</div>
 
@@ -157,13 +137,12 @@
 				<!-- Mobile menu button -->
 				<div class="md:hidden">
 					<button type="button"
-							class="bg-white rounded-md p-2 inline-flex items-center justify-center text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary-500"
+							class="mobile-menu-button bg-gray-50 inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary-500"
 							aria-controls="mobile-menu"
-							aria-expanded="false">
+							aria-expanded="false"
+							onclick="event.preventDefault();">
 						<span class="sr-only">Open main menu</span>
-						<!-- Icon when menu is closed -->
 						<svg class="block h-6 w-6"
-							 xmlns="http://www.w3.org/2000/svg"
 							 fill="none"
 							 viewBox="0 0 24 24"
 							 stroke="currentColor"
@@ -173,23 +152,34 @@
 								  stroke-width="2"
 								  d="M4 6h16M4 12h16M4 18h16" />
 						</svg>
+						<svg class="hidden h-6 w-6"
+							 fill="none"
+							 viewBox="0 0 24 24"
+							 stroke="currentColor"
+							 aria-hidden="true">
+							<path stroke-linecap="round"
+								  stroke-linejoin="round"
+								  stroke-width="2"
+								  d="M6 18L18 6M6 6l12 12" />
+						</svg>
 					</button>
 				</div>
 			</div>
 
 			<!-- Mobile menu -->
-			<div class="md:hidden"
-				 id="mobile-menu">
-				<div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+			<div class="md:hidden hidden"
+				 id="mobile-menu"
+				 style="display: none;">
+				<div class="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-white border-t border-gray-200">
 					<a href="/"
-					   class="text-gray-700 hover:text-primary-600 block px-3 py-2 rounded-md text-base font-medium">Home</a>
+					   class="text-gray-700 hover:text-primary-600 block px-3 py-2 rounded-md text-base font-medium transition-colors duration-200">Home</a>
 					<a href="/articles"
-					   class="text-gray-700 hover:text-primary-600 block px-3 py-2 rounded-md text-base font-medium">Market
+					   class="text-gray-700 hover:text-primary-600 block px-3 py-2 rounded-md text-base font-medium transition-colors duration-200">Market
 						Analysis</a>
 					<a href="/about"
-					   class="text-gray-700 hover:text-primary-600 block px-3 py-2 rounded-md text-base font-medium">About</a>
+					   class="text-gray-700 hover:text-primary-600 block px-3 py-2 rounded-md text-base font-medium transition-colors duration-200">About</a>
 					<a href="/contact"
-					   class="text-gray-700 hover:text-primary-600 block px-3 py-2 rounded-md text-base font-medium">Contact</a>
+					   class="text-gray-700 hover:text-primary-600 block px-3 py-2 rounded-md text-base font-medium transition-colors duration-200">Contact</a>
 				</div>
 			</div>
 		</nav>
@@ -197,53 +187,71 @@
 
 	<!-- Main Content -->
 	<main id="main-content"
-		  class="flex-1">
-		{{block "content" .}}{{end}}
+		  class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"
+		  role="main">
+		{{block "content" .}}
+		<!-- Default content if child template doesn't define it -->
+		<div class="text-center py-16">
+			<div class="max-w-md mx-auto">
+				<svg class="mx-auto h-12 w-12 text-gray-400"
+					 fill="none"
+					 viewBox="0 0 24 24"
+					 stroke="currentColor">
+					<path stroke-linecap="round"
+						  stroke-linejoin="round"
+						  stroke-width="2"
+						  d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+				</svg>
+				<h3 class="mt-2 text-sm font-medium text-gray-900">Content loading...</h3>
+				<p class="mt-1 text-sm text-gray-500">Please wait while we load the content.</p>
+			</div>
+		</div>
+		{{end}}
 	</main>
 
 	<!-- Footer -->
-	<footer class="bg-gray-800 text-white">
-		<div class="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+	<footer class="bg-gray-900 text-white mt-auto">
+		<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
 			<div class="grid grid-cols-1 md:grid-cols-4 gap-8">
 				<!-- Company Info -->
-				<div class="md:col-span-2">
+				<div class="col-span-1 md:col-span-2">
 					<div class="flex items-center space-x-2 mb-4">
-						<img src="/static/logo.png"
-							 alt="Thai Stock Analysis"
-							 class="w-8 h-8">
-						<h3 class="text-lg font-semibold">Thai Stock Analysis</h3>
+						<svg class="w-8 h-8 text-primary-400"
+							 fill="currentColor"
+							 viewBox="0 0 24 24">
+							<path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z" />
+						</svg>
+						<span class="text-xl font-bold">Thai Stock Analysis</span>
 					</div>
-					<p class="text-gray-300 mb-4">Professional Thai stock market analysis and investment insights. Daily
-						market reports and financial guidance for Thai SET index.</p>
+					<p class="text-gray-300 mb-4 max-w-md">
+						Professional Thai stock market analysis and investment insights. We provide daily market
+						reports,
+						comprehensive analysis, and investment guidance to help you make informed financial decisions.
+					</p>
 					<div class="flex space-x-4">
-						<a href="#"
-						   class="text-gray-300 hover:text-white transition-colors duration-200">
+						<a href="https://facebook.com/thaistockanalysissolution"
+						   class="text-gray-300 hover:text-primary-400 transition-colors duration-200"
+						   target="_blank"
+						   rel="noopener noreferrer">
 							<span class="sr-only">Facebook</span>
 							<svg class="h-6 w-6"
 								 fill="currentColor"
 								 viewBox="0 0 24 24">
-								<path
-									  d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z" />
+								<path fill-rule="evenodd"
+									  d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z"
+									  clip-rule="evenodd" />
 							</svg>
 						</a>
-						<a href="#"
-						   class="text-gray-300 hover:text-white transition-colors duration-200">
-							<span class="sr-only">Twitter</span>
+						<a href="https://t.me/thaistockanalysis"
+						   class="text-gray-300 hover:text-primary-400 transition-colors duration-200"
+						   target="_blank"
+						   rel="noopener noreferrer">
+							<span class="sr-only">Telegram</span>
 							<svg class="h-6 w-6"
 								 fill="currentColor"
 								 viewBox="0 0 24 24">
 								<path
-									  d="M8.29 20.251c7.547 0 11.675-6.253 11.675-11.675 0-.178 0-.355-.012-.53A8.348 8.348 0 0022 5.92a8.19 8.19 0 01-2.357.646 4.118 4.118 0 001.804-2.27 8.224 8.224 0 01-2.605.996 4.107 4.107 0 00-6.993 3.743 11.65 11.65 0 01-8.457-4.287 4.106 4.106 0 001.27 5.477A4.072 4.072 0 012.8 9.713v.052a4.105 4.105 0 003.292 4.022 4.095 4.095 0 01-1.853.07 4.108 4.108 0 003.834 2.85A8.233 8.233 0 012 18.407a11.616 11.616 0 006.29 1.84" />
-							</svg>
-						</a>
-						<a href="#"
-						   class="text-gray-300 hover:text-white transition-colors duration-200">
-							<span class="sr-only">LinkedIn</span>
-							<svg class="h-6 w-6"
-								 fill="currentColor"
-								 viewBox="0 0 24 24">
-								<path
-									  d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
+									  d="M12 0C5.374 0 0 5.374 0 12s5.374 12 12 12 12-5.374 12-12S18.626 0 12 0zm5.568 8.16c-.188 1.926-.896 6.728-.896 6.728-.378 1.725-.888 2.026-1.446 2.026-.614 0-.881-.456-.881-1.026 0-.387.132-.885.237-1.281l.897-4.423s.092-.482-.097-.534c-.188-.051-.414.198-.414.198L9.897 16.3s-.309.368-.763.368c-.454 0-.815-.368-.815-.368s3.062-2.638 6.351-5.454c.827-.708 1.216-1.098 1.216-1.832 0-.585-.454-.854-.454-.854z" />
 							</svg>
 						</a>
 					</div>
@@ -252,7 +260,7 @@
 				<!-- Quick Links -->
 				<div>
 					<h3 class="text-sm font-semibold text-gray-400 tracking-wider uppercase mb-4">Quick Links</h3>
-					<ul class="space-y-2">
+					<ul class="space-y-3">
 						<li><a href="/"
 							   class="text-gray-300 hover:text-white transition-colors duration-200">Home</a></li>
 						<li><a href="/articles"
@@ -268,7 +276,7 @@
 				<!-- Legal -->
 				<div>
 					<h3 class="text-sm font-semibold text-gray-400 tracking-wider uppercase mb-4">Legal</h3>
-					<ul class="space-y-2">
+					<ul class="space-y-3">
 						<li><a href="/privacy"
 							   class="text-gray-300 hover:text-white transition-colors duration-200">Privacy Policy</a>
 						</li>
@@ -278,35 +286,92 @@
 						<li><a href="/disclaimer"
 							   class="text-gray-300 hover:text-white transition-colors duration-200">Investment
 								Disclaimer</a></li>
+						<li><a href="/sitemap"
+							   class="text-gray-300 hover:text-white transition-colors duration-200">Sitemap</a></li>
 					</ul>
 				</div>
 			</div>
 
-			<div class="mt-8 border-t border-gray-700 pt-8">
+			<!-- Bottom Footer -->
+			<div class="mt-8 pt-8 border-t border-gray-800">
 				<div class="flex flex-col md:flex-row justify-between items-center">
-					<p class="text-gray-400 text-sm">© {{.CurrentDate}} Thai Stock Analysis. All rights reserved.</p>
-					<p class="text-gray-400 text-sm mt-2 md:mt-0">Professional investment analysis and market insights
-						for Thailand's SET index.</p>
+					<p class="text-gray-400 text-sm">
+						© 2025 Thai Stock Analysis. All rights reserved.
+						<span class="block md:inline">Investment information for educational purposes only.</span>
+					</p>
+					<div class="mt-4 md:mt-0 flex space-x-6">
+						<span class="text-gray-400 text-sm">Last updated: {{.CurrentDate}}</span>
+					</div>
 				</div>
 			</div>
 		</div>
 	</footer>
 
-	<!-- Mobile menu toggle script -->
+	<!-- Mobile Menu JavaScript -->
 	<script>
 		document.addEventListener('DOMContentLoaded', function () {
-			const mobileMenuButton = document.querySelector('[aria-controls="mobile-menu"]');
+			const mobileMenuButton = document.querySelector('.mobile-menu-button');
 			const mobileMenu = document.getElementById('mobile-menu');
+			const menuIcons = mobileMenuButton.querySelectorAll('svg');
 
-			if (mobileMenuButton && mobileMenu) {
-				mobileMenuButton.addEventListener('click', function () {
-					const expanded = mobileMenuButton.getAttribute('aria-expanded') === 'true';
-					mobileMenuButton.setAttribute('aria-expanded', !expanded);
-					mobileMenu.classList.toggle('hidden');
-				});
-			}
+			mobileMenuButton.addEventListener('click', function (e) {
+				e.preventDefault();
+				const expanded = this.getAttribute('aria-expanded') === 'true' || false;
+				this.setAttribute('aria-expanded', !expanded);
+
+				if (expanded) {
+					mobileMenu.classList.add('hidden');
+					mobileMenu.style.display = 'none';
+				} else {
+					mobileMenu.classList.remove('hidden');
+					mobileMenu.style.display = 'block';
+				}
+
+				// Toggle menu icons
+				menuIcons.forEach(icon => icon.classList.toggle('hidden'));
+			});
+
+			// Close mobile menu when clicking outside
+			document.addEventListener('click', function (event) {
+				if (!mobileMenuButton.contains(event.target) && !mobileMenu.contains(event.target)) {
+					mobileMenu.classList.add('hidden');
+					mobileMenu.style.display = 'none';
+					mobileMenuButton.setAttribute('aria-expanded', 'false');
+					menuIcons[0].classList.remove('hidden');
+					menuIcons[1].classList.add('hidden');
+				}
+			});
+
+			// Close mobile menu when window is resized to desktop
+			window.addEventListener('resize', function () {
+				if (window.innerWidth >= 768) {
+					mobileMenu.classList.add('hidden');
+					mobileMenu.style.display = 'none';
+					mobileMenuButton.setAttribute('aria-expanded', 'false');
+					menuIcons[0].classList.remove('hidden');
+					menuIcons[1].classList.add('hidden');
+				}
+			});
+		});
+
+		// Smooth scroll for anchor links
+		document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+			anchor.addEventListener('click', function (e) {
+				e.preventDefault();
+				const target = document.querySelector(this.getAttribute('href'));
+				if (target) {
+					target.scrollIntoView({
+						behavior: 'smooth',
+						block: 'start'
+					});
+				}
+			});
 		});
 	</script>
+
+	<!-- Performance and Analytics placeholder (AdSense compatible) -->
+	<!-- Add your analytics code here when ready -->
+
 </body>
 
 </html>

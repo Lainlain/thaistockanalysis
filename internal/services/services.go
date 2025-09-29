@@ -1,8 +1,12 @@
 package services
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"html/template"
+	"log"
+	"net/http"
 	"os"
 	"regexp"
 	"strconv"
@@ -98,20 +102,20 @@ func (ms *MarkdownService) ParseMarkdownArticle(filePath string) (models.StockDa
 			continue
 		}
 
-		// Subsections
-		if strings.HasPrefix(line, "### Open Set") {
+		// Subsections - support both old and new formats
+		if strings.HasPrefix(line, "### Open Set") || strings.HasPrefix(line, "### Market Opening Data") {
 			currentSubsection = "open"
 			analysisContent = ""
 			continue
-		} else if strings.HasPrefix(line, "### Open Analysis") {
+		} else if strings.HasPrefix(line, "### Open Analysis") || strings.HasPrefix(line, "### Market Analysis") {
 			currentSubsection = "open_analysis"
 			analysisContent = ""
 			continue
-		} else if strings.HasPrefix(line, "### Close Set") {
+		} else if strings.HasPrefix(line, "### Close Set") || strings.HasPrefix(line, "### Market Closing Data") {
 			currentSubsection = "close"
 			summaryContent = ""
 			continue
-		} else if strings.HasPrefix(line, "### Close Summary") {
+		} else if strings.HasPrefix(line, "### Close Summary") || strings.HasPrefix(line, "### Market Summary") {
 			currentSubsection = "close_summary"
 			summaryContent = ""
 			continue
@@ -144,7 +148,7 @@ func (ms *MarkdownService) ParseMarkdownArticle(filePath string) (models.StockDa
 func (ms *MarkdownService) parseMorningSession(line, subsection string, data *models.StockData, analysisContent, summaryContent *string) {
 	switch subsection {
 	case "open":
-		if strings.HasPrefix(line, "* Open Index:") {
+		if strings.HasPrefix(line, "* Open Index:") || strings.HasPrefix(line, "* Index:") {
 			data.MorningOpenIndex, data.MorningOpenChange = ms.parseIndexLine(line)
 		} else if strings.HasPrefix(line, "* Highlights:") {
 			data.MorningOpenHighlights = ms.parseHighlights(line)
@@ -182,7 +186,7 @@ func (ms *MarkdownService) parseMorningSession(line, subsection string, data *mo
 func (ms *MarkdownService) parseAfternoonSession(line, subsection string, data *models.StockData, analysisContent, summaryContent *string) {
 	switch subsection {
 	case "open":
-		if strings.HasPrefix(line, "* Open Index:") {
+		if strings.HasPrefix(line, "* Open Index:") || strings.HasPrefix(line, "* Index:") {
 			data.AfternoonOpenIndex, data.AfternoonOpenChange = ms.parseIndexLine(line)
 		} else if strings.HasPrefix(line, "* Highlights:") {
 			data.AfternoonOpenHighlights = ms.parseHighlights(line)
@@ -198,7 +202,7 @@ func (ms *MarkdownService) parseAfternoonSession(line, subsection string, data *
 			}
 		}
 	case "close":
-		if strings.HasPrefix(line, "* Close Index:") {
+		if strings.HasPrefix(line, "* Close Index:") || strings.HasPrefix(line, "* Index:") {
 			data.AfternoonCloseIndex, data.AfternoonCloseChange = ms.parseIndexLine(line)
 		} else if strings.HasPrefix(line, "* Highlights:") {
 			data.AfternoonCloseHighlights = ms.parseHighlights(line)
@@ -291,4 +295,100 @@ func (ts *TemplateService) ClearTemplateCache() {
 	templateMutex.Lock()
 	defer templateMutex.Unlock()
 	templateCache = make(map[string]*template.Template)
+}
+
+// TelegramService handles Telegram bot messaging
+type TelegramService struct {
+	BotToken string
+	Channel  string
+}
+
+// NewTelegramService creates a new Telegram service
+func NewTelegramService(botToken, channel string) *TelegramService {
+	return &TelegramService{
+		BotToken: botToken,
+		Channel:  channel,
+	}
+}
+
+// TelegramMessage represents a Telegram bot message
+type TelegramMessage struct {
+	ChatID    string `json:"chat_id"`
+	Text      string `json:"text"`
+	ParseMode string `json:"parse_mode"`
+}
+
+// SendMarketUpdate sends a market update message to the Telegram channel
+func (ts *TelegramService) SendMarketUpdate(sessionType, openIndex, change, date string) error {
+	if ts.BotToken == "" || ts.Channel == "" {
+		log.Printf("⚠️  Telegram not configured, skipping notification")
+		return nil
+	}
+
+	// Determine session time and create Myanmar language message
+	var sessionTime, myanmarTitle string
+	if strings.Contains(strings.ToLower(sessionType), "morning") {
+		sessionTime = "12:01 PM"
+		myanmarTitle = fmt.Sprintf("%s(%s) အတွက် Thai Stock Analysis ဂဏန်းများရပါပြီ", date, sessionTime)
+	} else {
+		sessionTime = "4:30 PM"
+		myanmarTitle = fmt.Sprintf("%s(%s) အတွက် Thai Stock Analysis ဂဏန်းများရပါပြီ", date, sessionTime)
+	}
+
+	message := fmt.Sprintf("📊 *Thai Stock Market - %s*\n\n", sessionType)
+	message += fmt.Sprintf("🔍 *Open Index:* `%s`\n", openIndex)
+	message += fmt.Sprintf("📈 *Change:* `%s`\n\n", change)
+	message += fmt.Sprintf("📅 *%s*\n\n", myanmarTitle)
+	message += "အောက်ကလင့်ခ်ကိုနှိပ်ပြီးကြည့်ပါ\n"
+	message += "🌐 https://thaistockanalysis.com"
+
+	telegramMsg := TelegramMessage{
+		ChatID:    ts.Channel,
+		Text:      message,
+		ParseMode: "Markdown",
+	}
+
+	jsonData, err := json.Marshal(telegramMsg)
+	if err != nil {
+		return fmt.Errorf("failed to marshal Telegram message: %v", err)
+	}
+
+	apiURL := fmt.Sprintf("https://api.telegram.org/bot%s/sendMessage", ts.BotToken)
+
+	resp, err := http.Post(apiURL, "application/json", bytes.NewBuffer(jsonData))
+	if err != nil {
+		return fmt.Errorf("failed to send Telegram message: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("Telegram API returned status code: %d", resp.StatusCode)
+	}
+
+	log.Printf("✅ Telegram notification sent: %s - Index: %s, Change: %s", sessionType, openIndex, change)
+	return nil
+}
+
+// ExtractMarketData extracts Open Index and Change from market data text
+func (ts *TelegramService) ExtractMarketData(text string) (openIndex, change string) {
+	// Pattern to match "Open Index: 1295.80 (+5.15)" format
+	indexPattern := regexp.MustCompile(`(?i)open\s+index[:\s]+([0-9,]+\.?\d*)\s*\(([+-]?[0-9,]+\.?\d*)\)`)
+
+	matches := indexPattern.FindStringSubmatch(text)
+	if len(matches) >= 3 {
+		openIndex = matches[1]
+		change = matches[2]
+		return
+	}
+
+	// Fallback: try to find any number patterns that might be index values
+	numberPattern := regexp.MustCompile(`([0-9,]+\.?\d*)\s*\(([+-]?[0-9,]+\.?\d*)\)`)
+	matches = numberPattern.FindStringSubmatch(text)
+	if len(matches) >= 3 {
+		openIndex = matches[1]
+		change = matches[2]
+		return
+	}
+
+	return "N/A", "N/A"
 }

@@ -8,25 +8,31 @@ import (
 
 // Config holds application configuration
 type Config struct {
-	Port         string
-	DatabasePath string
-	ArticlesDir  string
-	TemplateDir  string
-	StaticDir    string
-	DebugMode    bool
-	CacheExpiry  int // minutes
+	Port             string
+	DatabasePath     string
+	ArticlesDir      string
+	TemplateDir      string
+	StaticDir        string
+	DebugMode        bool
+	CacheExpiry      int // minutes
+	GeminiAPIKey     string
+	TelegramBotToken string
+	TelegramChannel  string
 }
 
 // LoadConfig loads configuration from environment variables with defaults
 func LoadConfig() *Config {
 	config := &Config{
-		Port:         getEnv("PORT", "7777"),
-		DatabasePath: getEnv("DATABASE_PATH", "data/admin.db"),
-		ArticlesDir:  getEnv("ARTICLES_DIR", "articles"),
-		TemplateDir:  getEnv("TEMPLATE_DIR", "web/templates"),
-		StaticDir:    getEnv("STATIC_DIR", "web/static"),
-		DebugMode:    getEnvBool("DEBUG_MODE", false),
-		CacheExpiry:  getEnvInt("CACHE_EXPIRY", 5),
+		Port:             getEnv("PORT", "7777"),
+		DatabasePath:     getEnv("DATABASE_PATH", "data/admin.db"),
+		ArticlesDir:      getEnv("ARTICLES_DIR", "articles"),
+		TemplateDir:      getEnv("TEMPLATE_DIR", "web/templates"),
+		StaticDir:        getEnv("STATIC_DIR", "web/static"),
+		DebugMode:        getEnvBool("DEBUG_MODE", false),
+		CacheExpiry:      getEnvInt("CACHE_EXPIRY", 5),
+		GeminiAPIKey:     getEnv("GEMINI_API_KEY", "AIzaSyBkw_fi16Q39yjZdZ0C3PTw-vuADTR-KAM"),
+		TelegramBotToken: getEnv("TELEGRAM_BOT_TOKEN", "7912088515:AAFn3YbnE-84MmMgvhoc6vpJ5HiLPtH5IEg"),
+		TelegramChannel:  getEnv("TELEGRAM_CHANNEL", "-1002240874831"),
 	}
 
 	log.Printf("Configuration loaded:")
@@ -37,6 +43,9 @@ func LoadConfig() *Config {
 	log.Printf("  Static: %s", config.StaticDir)
 	log.Printf("  Debug: %t", config.DebugMode)
 	log.Printf("  Cache Expiry: %d minutes", config.CacheExpiry)
+	log.Printf("  Gemini API Key: %s", config.GeminiAPIKey[:10]+"...")
+	log.Printf("  Telegram Bot: %s", config.TelegramBotToken[:10]+"...")
+	log.Printf("  Telegram Channel: %s", config.TelegramChannel)
 
 	return config
 }

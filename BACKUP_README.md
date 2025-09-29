@@ -1,0 +1,1 @@
+- **Responsive**: Different layouts optimized for each screen size

@@ -15,8 +15,9 @@ The application is a high-performance Go web server providing Thai stock market 
 - **Language**: Go 1.24.6 with `net/http` routing
 - **Database**: SQLite via `github.com/mattn/go-sqlite3`, located at `data/admin.db`
 - **Templates**: Go's `html/template` with Tailwind CSS in `web/templates/`
-- **Caching**: Thread-safe template/markdown caches with 5-minute expiry
+- **Caching**: Thread-safe template/markdown caches with configurable expiry (default 5 minutes)
 - **Article Storage**: Dual system (markdown files + SQLite metadata)
+- **External APIs**: Google Gemini AI integration and Telegram Bot notifications
 
 ## 2. Key Components and Data Flow
 
@@ -57,7 +58,12 @@ Configure via environment variables or defaults in `configs/config.go`:
 - `DATABASE_PATH=data/admin.db`
 - `ARTICLES_DIR=articles`
 - `TEMPLATE_DIR=web/templates`
+- `STATIC_DIR=web/static`
 - `DEBUG_MODE=false`
+- `CACHE_EXPIRY=5` (minutes)
+- `GEMINI_API_KEY` (for AI analysis)
+- `TELEGRAM_BOT_TOKEN` (for notifications)
+- `TELEGRAM_CHANNEL` (target channel ID)
 
 ### Docker Deployment
 ```bash
@@ -89,14 +95,25 @@ docker-compose up -d
 
 ### Caching Strategy
 - **Template Cache**: `sync.RWMutex` protected, global scope
-- **Markdown Cache**: 5-minute expiry with mutex protection
+- **Markdown Cache**: Configurable expiry (default 5 minutes) with mutex protection
+- **Cache Management**: `ClearCache(filePath)` for targeted invalidation
 - **Performance**: Database-only index queries avoid filesystem I/O
+
+### Debugging and Development
+- **Debug Files**: `debug_parser.go` and `debug_template.go` for standalone testing
+- **Server Logs**: Multiple log files (`server.log`, `server_test.log`) for troubleshooting
+- **Market Data Testing**: `test_new_format.go` for validating parsing logic
 
 ## 5. Integration Points
 
 ### Dependencies (`go.mod`)
 - `github.com/gomarkdown/markdown`: Markdown to HTML conversion
 - `github.com/mattn/go-sqlite3`: SQLite database driver (requires CGO)
+
+### API Endpoints
+- `/api/market-data-analysis`: Gemini AI-powered market analysis
+- `/api/market-data-close`: Market closing data processing
+- `/admin/articles/new`: Structured article creation form
 
 ### Static Assets
 - **Location**: `web/static/` (modern) or `src/static/` (legacy)
