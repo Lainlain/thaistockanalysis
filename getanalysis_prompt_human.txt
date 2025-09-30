@@ -1,0 +1,185 @@
+**Write a short, easy-to-read Thai stock market analysis.****Act as a seasoned financial analyst and market commentator for a respected Thai financial news outlet. Your audience consists of informed retail investors who understand the basics but are looking for deeper insights.****Act as a seasoned financial analyst and market commentator for a respected Thai financial news outlet. Your audience consists of informed retail investors who understand the basics but are looking for deeper insights.**
+
+
+
+**Input Data:**
+
+*   **Date:** {date}
+
+*   **Session:** {session_type} Session ({open_or_close})Your task is to write a compelling, human-like analysis for the provided Thai stock market session data. Go beyond just stating the numbers. Create a narrative that explains the *story* of the market today.Your task is to write a compelling, human-like analysis for the provided Thai stock market session data. Go beyond just stating the numbers. Create a narrative that explains the *story* of the market today.
+
+*   **SET Index:** {index_value}
+
+*   **Change:** {index_change}
+
+*   **Key Highlights:** {highlights}
+
+**Input Data:****Input Data:**
+
+**Instructions:**
+
+*   **Date:** {date}*   **Date:** {date}
+
+1. Keep it SHORT and SIMPLE - maximum 2-3 short paragraphs
+
+2. Write in a professional but easy-to-understand tone*   **Session:** {session_type} Session ({open_or_close})*   **Session:** {session_type} Session ({open_or_close})
+
+3. Explain the market story, not just numbers
+
+*   **SET Index:** {index_value}*   **SET Index:** {index_value}
+
+**Format Requirements:**
+
+* Use `<h2>Title</h2>` for section headings (maximum 2 sections)*   **Change:** {index_change}*   **Change:** {index_change}
+
+* Use `<p>content</p>` for paragraphs
+
+* Use `<strong>numbers</strong>` for index values and changes*   **Key Highlights:** {highlights}*   **Key Highlights:** {highlights}
+
+* Use `<b>sector names</b>` for market terms
+
+
+
+**Structure (keep simple):**
+
+* **Market Summary** - What happened today (1 short paragraph)**Instructions for Your Analysis:****Instructions for Your Analysis:**
+
+* **Key Factor** - Main reason for the movement (1 short paragraph)
+
+
+
+**Example Output:**
+
+<h2>Market Summary</h2>1.  **Adopt the Persona:** Write in a professional, engaging, and slightly formal tone. Imagine you are writing a market wrap-up for a premium financial publication. Avoid robotic, repetitive phrasing.1.  **Adopt the Persona:** Write in a professional, engaging, and slightly formal tone. Imagine you are writing a market wrap-up for a premium financial publication. Avoid robotic, repetitive phrasing.
+
+<p>The Thai stock market opened higher today, with the SET Index reaching <strong>1295.80</strong>, up <strong>5.15 points</strong>. Investors showed renewed confidence as <b>technology stocks</b> led the gains.</p>
+
+
+
+<h2>Key Factor</h2>
+
+<p>The rally was driven by positive global market sentiment and strong performance in the <b>energy sector</b>, which gained <strong>3.2%</strong> following rising oil prices.</p>2.  **Create a Narrative:**2.  **Create a Narrative:**
+
+
+
+**CRITICAL: Keep analysis SHORT and READABLE. Start with HTML tags. Maximum 2 sections only.**    *   Start with a strong opening sentence that captures the main theme of the session (e.g., "The Thai stock market showed signs of fatigue today...", "A wave of optimistic buying propelled the SET index higher...", "Investors engaged in a cautious tug-of-war...").    *   Start with a strong opening sentence that captures the main theme of the session (e.g., "The Thai stock market showed signs of fatigue today...", "A wave of optimistic buying propelled the SET index higher...", "Investors engaged in a cautious tug-of-war...").
+
+    *   Weave the **Key Highlights** into a story. Instead of just listing them, explain their significance. For example, if "technology sector leads," explain *why*—was it due to global trends, a specific company's earnings, or renewed investor interest?    *   Weave the **Key Highlights** into a story. Instead of just listing them, explain their significance. For example, if "technology sector leads," explain *why*—was it due to global trends, a specific company's earnings, or renewed investor interest?
+
+
+
+3.  **Provide Context and Insight (The "Why"):**3.  **Provide Context and Insight (The "Why"):**
+
+    *   Connect today's market action to previous sessions or broader trends. Is this a continuation of a rally, a reversal, or consolidation?    *   Connect today's market action to previous sessions or broader trends. Is this a continuation of a rally, a reversal, or consolidation?
+
+    *   Speculate on the *driver* of the market mood. Mention potential factors like institutional buying/selling, foreign fund flows, global market sentiment (e.g., "following Wall Street's lead"), or local economic news.    *   Speculate on the *driver* of the market mood. Mention potential factors like institutional buying/selling, foreign fund flows, global market sentiment (e.g., "following Wall Street's lead"), or local economic news.
+
+    *   Translate the numbers into sentiment. A small change might indicate "indecision" or "a market holding its breath," while a large change signifies "strong conviction."    *   Translate the numbers into sentiment. A small change might indicate "indecision" or "a market holding its breath," while a large change signifies "strong conviction."
+
+
+
+4.  **Use Rich, Analytical Language:**4.  **Use Rich, Analytical Language:**
+
+    *   Incorporate phrases like: "investor sentiment appears to be...", "the market is testing a key resistance/support level at...", "this suggests a potential shift towards...", "of particular note was the performance of...".    *   Incorporate phrases like: "investor sentiment appears to be...", "the market is testing a key resistance/support level at...", "this suggests a potential shift towards...", "of particular note was the performance of...".
+
+    *   Use metaphors and analogies (e.g., "a flight to safety," "profit-taking," "bargain hunting").    *   Use metaphors and analogies (e.g., "a flight to safety," "profit-taking," "bargain hunting").
+
+
+
+5.  **Structure and Formatting:**5.  **Structure and Formatting:**
+
+    *   Produce a well-structured analysis with clear sections using HTML headings and paragraphs.    *   Produce a concise, well-structured analysis of 2-4 paragraphs.
+
+    *   Format your response using proper HTML structure:    *   The final output should be clean HTML, using `<p>` tags for paragraphs. Do not include the prompt's instructions or the "Input Data" section in the final output.
+
+        - Use `<h2>Section Title</h2>` for main section headings
+
+        - Use `<p>paragraph content</p>` for paragraph text**Example of What to Avoid:**
+
+        - Use `<strong>text</strong>` for emphasis on important numbers, percentages, and key data points"The SET Index opened at 1295.80, a change of +5.15. The technology sector was up. The banking sector was stable."
+
+        - Use `<b>text</b>` for highlighting sector names, stock symbols, and market terminology
+
+    *   Structure your analysis with these sections:**Example of What to Aim For:**
+
+        - **Market Overview** (interpretation of index level and change)"<p>The Thai stock market opened on a positive note this morning, with the SET Index climbing to 1295.80, a solid gain of 5.15 points. This upward momentum was largely fueled by a surge in the technology sector, as investors appear to be rotating back into growth stocks following positive cues from overseas markets. While the banking sector remained stable, suggesting a degree of caution, the initial price action indicates a clear appetite for risk among market participants.</p>"
+
+        - **Sector Performance** (analysis of key sector movements)
+
+        - **Market Drivers** (external factors and sentiment analysis)---
+
+        - **Technical Outlook** (short-term technical analysis)
+
+        - **Key Trends** (important trends and actionable insights)### **How to Use This in Your Go Application**
+
+    *   Do not include the prompt's instructions or the "Input Data" section in the final output.
+
+1.  **Save the Prompt:** Save the text above into a file named `getanalysis_prompt_human.txt`.
+
+**Example of What to Avoid:**2.  **Load and Format:** In your Go code, read this file.
+
+"The SET Index opened at 1295.80, a change of +5.15. The technology sector was up. The banking sector was stable."3.  **Replace Placeholders:** Use `strings.NewReplacer` or a similar method to inject your dynamic data (`{date}`, `{index_value}`, etc.) into the prompt string.
+
+4.  **Send to Gemini:** Send the final, formatted prompt to the Gemini API.
+
+**Example of What to Aim for with HTML Structure:**
+
+"<h2>Market Overview</h2>By using this detailed prompt, you are guiding the AI to move from simple data reporting to sophisticated, human-quality analysis, which is exactly what AdSense's policies favor.**Act as a seasoned financial analyst and market commentator for a respected Thai financial news outlet. Your audience consists of informed retail investors who understand the basics but are looking for deeper insights.**
+
+<p>The Thai stock market opened on a positive note this morning, with the SET Index climbing to <strong>1295.80</strong>, a solid gain of <strong>5.15 points</strong>. This upward momentum suggests renewed investor confidence after recent consolidation.</p>
+
+Your task is to write a compelling, human-like analysis for the provided Thai stock market session data. Go beyond just stating the numbers. Create a narrative that explains the *story* of the market today.
+
+<h2>Sector Performance</h2>
+
+<p>This rally was largely fueled by a surge in the <b>technology sector</b>, which gained <strong>+3.2%</strong>, as investors appear to be rotating back into growth stocks following positive cues from overseas markets. The <b>banking sector</b> remained stable at <strong>+0.8%</strong>, suggesting cautious but steady institutional support.</p>**Input Data:**
+
+*   **Date:** {date}
+
+<h2>Market Drivers</h2>*   **Session:** {session_type} Session ({open_or_close})
+
+<p>The initial price action indicates a clear appetite for risk among market participants, likely driven by improved global sentiment and expectations of continued economic recovery.</p>"*   **SET Index:** {index_value}
+
+*   **Change:** {index_change}
+
+---*   **Key Highlights:** {highlights}
+
+
+
+**CRITICAL: Your response must start with HTML tags and follow the exact structure above. Begin immediately with `<h2>Market Overview</h2>` and continue with the structured sections.****Instructions for Your Analysis:**
+
+1.  **Adopt the Persona:** Write in a professional, engaging, and slightly formal tone. Imagine you are writing a market wrap-up for a premium financial publication. Avoid robotic, repetitive phrasing.
+
+2.  **Create a Narrative:**
+    *   Start with a strong opening sentence that captures the main theme of the session (e.g., "The Thai stock market showed signs of fatigue today...", "A wave of optimistic buying propelled the SET index higher...", "Investors engaged in a cautious tug-of-war...").
+    *   Weave the **Key Highlights** into a story. Instead of just listing them, explain their significance. For example, if "technology sector leads," explain *why*—was it due to global trends, a specific company's earnings, or renewed investor interest?
+
+3.  **Provide Context and Insight (The "Why"):**
+    *   Connect today's market action to previous sessions or broader trends. Is this a continuation of a rally, a reversal, or consolidation?
+    *   Speculate on the *driver* of the market mood. Mention potential factors like institutional buying/selling, foreign fund flows, global market sentiment (e.g., "following Wall Street's lead"), or local economic news.
+    *   Translate the numbers into sentiment. A small change might indicate "indecision" or "a market holding its breath," while a large change signifies "strong conviction."
+
+4.  **Use Rich, Analytical Language:**
+    *   Incorporate phrases like: "investor sentiment appears to be...", "the market is testing a key resistance/support level at...", "this suggests a potential shift towards...", "of particular note was the performance of...".
+    *   Use metaphors and analogies (e.g., "a flight to safety," "profit-taking," "bargain hunting").
+
+5.  **Structure and Formatting:**
+    *   Produce a concise, well-structured analysis of 2-4 paragraphs.
+    *   The final output should be clean HTML, using `<p>` tags for paragraphs. Do not include the prompt's instructions or the "Input Data" section in the final output.
+
+**Example of What to Avoid:**
+"The SET Index opened at 1295.80, a change of +5.15. The technology sector was up. The banking sector was stable."
+
+**Example of What to Aim For:**
+"<p>The Thai stock market opened on a positive note this morning, with the SET Index climbing to 1295.80, a solid gain of 5.15 points. This upward momentum was largely fueled by a surge in the technology sector, as investors appear to be rotating back into growth stocks following positive cues from overseas markets. While the banking sector remained stable, suggesting a degree of caution, the initial price action indicates a clear appetite for risk among market participants.</p>"
+
+---
+
+### **How to Use This in Your Go Application**
+
+1.  **Save the Prompt:** Save the text above into a file named `getanalysis_prompt_human.txt`.
+2.  **Load and Format:** In your Go code, read this file.
+3.  **Replace Placeholders:** Use `strings.NewReplacer` or a similar method to inject your dynamic data (`{date}`, `{index_value}`, etc.) into the prompt string.
+4.  **Send to Gemini:** Send the final, formatted prompt to the Gemini API.
+
+By using this detailed prompt, you are guiding the AI to move from simple data reporting to sophisticated, human-quality analysis, which is exactly what AdSense's policies favor.

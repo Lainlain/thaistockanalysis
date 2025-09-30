@@ -33,7 +33,7 @@ var (
 )
 
 // MardownService handles markdown file parsing and caching
-type MarkdownService struct{
+type MarkdownService struct {
 	cacheExpiry time.Duration
 }
 
@@ -161,6 +161,11 @@ func (ms *MarkdownService) parseMorningSession(line, subsection string, data *mo
 			data.MorningOpenIndex, data.MorningOpenChange = ms.parseIndexLine(line)
 		} else if strings.HasPrefix(line, "* Highlights:") {
 			data.MorningOpenHighlights = ms.parseHighlights(line)
+		} else if data.MorningOpenHighlights != "" && line != "" && !strings.HasPrefix(line, "###") && !strings.HasPrefix(line, "##") && !strings.HasPrefix(line, "*") {
+			// Continue collecting highlights content that spans multiple lines
+			if data.MorningOpenHighlights != "" {
+				data.MorningOpenHighlights += "\n\n" + line
+			}
 		}
 	case "open_analysis":
 		if strings.HasPrefix(line, "<p>") || *analysisContent != "" {
@@ -199,6 +204,11 @@ func (ms *MarkdownService) parseAfternoonSession(line, subsection string, data *
 			data.AfternoonOpenIndex, data.AfternoonOpenChange = ms.parseIndexLine(line)
 		} else if strings.HasPrefix(line, "* Highlights:") {
 			data.AfternoonOpenHighlights = ms.parseHighlights(line)
+		} else if data.AfternoonOpenHighlights != "" && line != "" && !strings.HasPrefix(line, "###") && !strings.HasPrefix(line, "##") && !strings.HasPrefix(line, "*") {
+			// Continue collecting highlights content that spans multiple lines
+			if data.AfternoonOpenHighlights != "" {
+				data.AfternoonOpenHighlights += "\n\n" + line
+			}
 		}
 	case "open_analysis":
 		if strings.HasPrefix(line, "<p>") || *analysisContent != "" {
@@ -246,7 +256,12 @@ func (ms *MarkdownService) parseIndexLine(line string) (float64, float64) {
 func (ms *MarkdownService) parseHighlights(line string) string {
 	// Remove "* Highlights: " prefix
 	if strings.HasPrefix(line, "* Highlights: ") {
-		return strings.TrimSpace(line[14:])
+		content := strings.TrimSpace(line[14:])
+		// Replace <br> tags with actual newlines for proper display
+		content = strings.ReplaceAll(content, "<br>", "\n")
+		content = strings.ReplaceAll(content, "<br/>", "\n")
+		content = strings.ReplaceAll(content, "<br />", "\n")
+		return content
 	}
 	return line
 }

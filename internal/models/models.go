@@ -1,6 +1,5 @@
 package models
 
-
 import (
 	"database/sql"
 	"html/template"
@@ -35,7 +34,6 @@ type ArticlePreview struct {
 	SetIndex     string
 	Change       float64
 	ShortSummary string
-	Summary      string
 	Slug         string
 	URL          string
 }

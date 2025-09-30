@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"math/rand"
 	"net/http"
 	"os"
 	"regexp"
@@ -25,6 +26,7 @@ type Handler struct {
 	MarkdownService *services.MarkdownService
 	TemplateService *services.TemplateService
 	TelegramService *services.TelegramService
+	PromptService   *services.PromptService // Added PromptService
 	ArticlesDir     string
 	TemplateDir     string
 	Config          *config.Config
@@ -32,10 +34,17 @@ type Handler struct {
 
 // NewHandler creates a new handler with dependencies
 func NewHandler(articlesDir, templateDir string, cfg *config.Config) *Handler {
+	// Initialize PromptService
+	promptService, err := services.NewPromptService("highlights_for_prompt.json")
+	if err != nil {
+		log.Fatalf("Failed to create PromptService: %v", err)
+	}
+
 	return &Handler{
 		MarkdownService: services.NewMarkdownService(cfg.CacheExpiry),
 		TemplateService: services.NewTemplateService(),
 		TelegramService: services.NewTelegramService(cfg.TelegramBotToken, cfg.TelegramChannel),
+		PromptService:   promptService, // Use the initialized service
 		ArticlesDir:     articlesDir,
 		TemplateDir:     templateDir,
 		Config:          cfg,
@@ -57,11 +66,18 @@ func (h *Handler) IndexHandler(w http.ResponseWriter, r *http.Request) {
 		markdownPath := fmt.Sprintf("%s/%s.md", h.ArticlesDir, article.Slug)
 		var setIndex string = "--"
 		var change float64 = 0.0
-		var shortSummary string = article.Summary.String
+		var shortSummary string
 
 		// Parse markdown file to get real data
 		if stockData, err := h.MarkdownService.GetCachedStockData(markdownPath); err == nil {
-			// Use the most recent close index available
+			// Determine the summary message first based on afternoon open data
+			if stockData.AfternoonOpenIndex > 0 {
+				shortSummary = "Daily full analysis available"
+			} else {
+				shortSummary = "Morning session analysis available."
+			}
+
+			// Use the most recent close index available for display
 			if stockData.AfternoonCloseIndex > 0 {
 				setIndex = fmt.Sprintf("%.2f", stockData.AfternoonCloseIndex)
 				change = stockData.AfternoonCloseChange
@@ -75,26 +91,22 @@ func (h *Handler) IndexHandler(w http.ResponseWriter, r *http.Request) {
 				setIndex = fmt.Sprintf("%.2f", stockData.MorningOpenIndex)
 				change = stockData.MorningOpenChange
 			}
-
-			// Create a short summary from highlights and takeaways
-			if len(stockData.KeyTakeaways) > 0 {
-				shortSummary = stockData.KeyTakeaways[0]
-			} else if stockData.MorningOpenHighlights != "" {
-				shortSummary = stockData.MorningOpenHighlights
-			} else if stockData.AfternoonOpenHighlights != "" {
-				shortSummary = stockData.AfternoonOpenHighlights
-			}
 		} else {
+			shortSummary = "Failed to load analysis."
 			fmt.Printf("Failed to parse markdown file %s: %v\n", markdownPath, err)
+		}
+
+		date, err := time.Parse("2006-01-02", article.CreatedAt)
+		if err != nil {
+			date = time.Now()
 		}
 
 		preview := models.ArticlePreview{
 			Title:        article.Title,
-			Date:         article.CreatedAt,
+			Date:         date.Format("2 Jan 2006"),
 			SetIndex:     setIndex,
 			Change:       change,
 			ShortSummary: shortSummary,
-			Summary:      shortSummary,
 			Slug:         article.Slug,
 			URL:          fmt.Sprintf("/articles/%s", article.Slug),
 		}
@@ -414,6 +426,7 @@ type GeminiRequest struct {
 }
 
 type GeminiContent struct {
+	Role  string       `json:"role,omitempty"`
 	Parts []GeminiPart `json:"parts"`
 }
 
@@ -429,10 +442,120 @@ type GeminiCandidate struct {
 	Content GeminiContent `json:"content"`
 }
 
+// loadHumanStylePrompt loads and formats the human-style prompt template
+func (h *Handler) loadHumanStylePrompt(date, sessionType, openOrClose, indexValue, indexChange, highlights string) (string, error) {
+	promptFile := "getanalysis_prompt_human.txt"
+	content, err := os.ReadFile(promptFile)
+	if err != nil {
+		log.Printf("Warning: Could not load human prompt template: %v", err)
+		// Return basic fallback prompt
+		return fmt.Sprintf(`Generate professional Thai stock market %s session analysis for %s:
+Index: %s (%s)
+Key Highlights: %s
+
+Provide engaging analysis covering market sentiment, technical outlook, and recommendations.
+Write in English, keep under 300 words, format as 3-4 paragraphs.`,
+			sessionType, date, indexValue, indexChange, highlights), nil
+	}
+
+	// Replace placeholders with actual data
+	replacer := strings.NewReplacer(
+		"{date}", date,
+		"{session_type}", sessionType,
+		"{open_or_close}", openOrClose,
+		"{index_value}", indexValue,
+		"{index_change}", indexChange,
+		"{highlights}", highlights,
+	)
+
+	return replacer.Replace(string(content)), nil
+}
+
+// loadHumanStyleClosePrompt loads and formats the human-style closing prompt template
+func (h *Handler) loadHumanStyleClosePrompt(date, sessionType, openingIndex, openingChange, closingIndex, closingChange, sessionPerformance string) (string, error) {
+	promptFile := "getanalysis_prompt_close_human.txt"
+	content, err := os.ReadFile(promptFile)
+	if err != nil {
+		log.Printf("Warning: Could not load closing prompt template: %v", err)
+		// Return basic fallback prompt
+		return fmt.Sprintf(`Generate brief Thai stock market %s session summary for %s:
+Opening: %s (%s)
+Closing: %s (%s)
+Session: %s
+
+Provide concise analysis covering session performance, sentiment, technical outlook, and recommendations.
+Write in English, keep under 200 words, format as 3-4 paragraphs.`,
+			sessionType, date, openingIndex, openingChange, closingIndex, closingChange, sessionPerformance), nil
+	}
+
+	// Replace placeholders with actual data
+	replacer := strings.NewReplacer(
+		"{date}", date,
+		"{session_type}", sessionType,
+		"{opening_index}", openingIndex,
+		"{opening_change}", openingChange,
+		"{closing_index}", closingIndex,
+		"{closing_change}", closingChange,
+		"{session_performance}", sessionPerformance,
+	)
+
+	return replacer.Replace(string(content)), nil
+}
+
+// convertNumbersToHighlights converts number strings to meaningful sector highlights
+func (h *Handler) convertNumbersToHighlights(numberStr string) string {
+	// Load highlights mapping from JSON file
+	highlightsFile := "highlights_for_prompt.json"
+	content, err := os.ReadFile(highlightsFile)
+	if err != nil {
+		log.Printf("Warning: Could not load highlights mapping: %v", err)
+		return numberStr // Return original if can't load mapping
+	}
+
+	var highlightsMap map[string][]string
+	if err := json.Unmarshal(content, &highlightsMap); err != nil {
+		log.Printf("Warning: Could not parse highlights JSON: %v", err)
+		return numberStr
+	}
+
+	// Split by <br> tags to get two groups
+	groups := strings.Split(numberStr, "<br>")
+
+	var highlights []string
+	re := regexp.MustCompile(`([+-]?\d+)`)
+
+	// Process each group and take only the FIRST number from each group
+	for _, group := range groups {
+		if strings.TrimSpace(group) == "" {
+			continue
+		}
+
+		// Find the first number in this group
+		matches := re.FindAllStringSubmatch(group, -1)
+		if len(matches) > 0 && len(matches[0]) > 1 {
+			originalNumber := matches[0][1]                 // First number with sign
+			digit := originalNumber[len(originalNumber)-1:] // Get last digit for mapping
+
+			if phrases, exists := highlightsMap[digit]; exists && len(phrases) > 0 {
+				// Randomly select ONE phrase per number
+				randomIndex := rand.Intn(len(phrases))
+				selectedPhrase := phrases[randomIndex]
+
+				// Format: Only the text, no number display
+				highlights = append(highlights, selectedPhrase)
+			}
+		}
+	}
+
+	if len(highlights) > 0 {
+		return strings.Join(highlights, "\n\n")
+	}
+
+	return numberStr // Fallback to original if no mapping found
+}
+
 // callGeminiAI makes a request to Gemini AI API
 func (h *Handler) callGeminiAI(prompt string) (string, error) {
-	// For now, we'll use a mock response since we need API key setup
-	// TODO: Replace with actual Gemini AI API call
 
 	apiKey := h.Config.GeminiAPIKey
 	if apiKey == "" {
@@ -440,13 +563,12 @@ func (h *Handler) callGeminiAI(prompt string) (string, error) {
 		return h.generateMockGeminiResponse(prompt), nil
 	}
 
-	// Prepare request
+	// The prompt is now pre-formatted with instructions, no need for additional system prompt
 	reqBody := GeminiRequest{
 		Contents: []GeminiContent{
 			{
-				Parts: []GeminiPart{
-					{Text: prompt},
-				},
+				Role:  "user",
+				Parts: []GeminiPart{{Text: prompt}},
 			},
 		},
 	}
@@ -456,7 +578,7 @@ func (h *Handler) callGeminiAI(prompt string) (string, error) {
 		return "", fmt.Errorf("failed to marshal request: %v", err)
 	}
 
-	// Make API call with retry logic for rate limiting - using Gemini Flash for speed
+	// Make API call with retry logic - using the v1beta gemini-2.5-flash model
 	url := fmt.Sprintf("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=%s", apiKey)
 
 	var resp *http.Response
@@ -753,22 +875,22 @@ func (h *Handler) generateAnalysisWithGemini(req MarketDataAnalysisRequest) stri
 		return "No market data available for analysis."
 	}
 
-	// Create detailed prompt for Gemini AI
-	prompt := fmt.Sprintf(`Generate a concise Thai stock market analysis for %s session on %s:
+	// Convert number highlights to meaningful sector text for the AI prompt
+	narrativeHighlight := h.convertNumbersToHighlights(session.Highlights)
 
-Opening Index: %.2f (%.2f points change)
-Highlights: %s
-
-Provide a brief analysis covering:
-- Current market sentiment and key drivers
-- Sector insights from highlights
-- Technical outlook and key levels
-- Trading recommendations
-
-IMPORTANT: Write the analysis in ENGLISH language only.
-Keep response under 300 words in professional tone for Thai investors.
-Format as 4-5 short paragraphs suitable for web display.`,
-		sessionType, req.Date, session.Index, session.Change, session.Highlights)
+	// Use human-style prompt for more engaging analysis
+	prompt, err := h.loadHumanStylePrompt(
+		req.Date,
+		sessionType,
+		"opening",
+		fmt.Sprintf("%.2f", session.Index),
+		fmt.Sprintf("%+.2f", session.Change),
+		narrativeHighlight,
+	)
+	if err != nil {
+		log.Printf("Error loading prompt template: %v", err)
+		return "Market analysis temporarily unavailable."
+	}
 
 	// Get market analysis
 	aiAnalysis, err := h.callGeminiAI(prompt)
@@ -791,12 +913,12 @@ Format as 4-5 short paragraphs suitable for web display.`,
 
 ### Open Set
 * Open Index: %.2f (%+.2f)
-* Highlights: **%s**
+* Highlights: %s <br><br> %s
 
 ### Open Analysis
-<p>%s</p>
+%s
 
-`, strings.Title(sessionType), session.Index, session.Change, session.Highlights, aiAnalysis)
+`, strings.Title(sessionType), session.Index, session.Change, narrativeHighlight, session.Highlights, aiAnalysis)
 } // parseSessionOpeningData reads existing markdown file and extracts opening data for specific session
 func (h *Handler) parseSessionOpeningData(date, sessionType string) (*MarketSession, error) {
 	filename := fmt.Sprintf("%s/%s.md", h.ArticlesDir, date)
@@ -903,22 +1025,27 @@ func (h *Handler) generateSessionClose(sessionType, date string, closeData *Mark
 		sessionDiff = -sessionDiff
 	}
 
-	// Create detailed prompt for Gemini AI comparative analysis
-	prompt := fmt.Sprintf(`Generate brief Thai stock market %s session summary for %s:
+	// Use human-style closing prompt for more engaging session summary
+	prompt, err := h.loadHumanStyleClosePrompt(
+		date,
+		sessionType,
+		fmt.Sprintf("%.2f", openData.Index),
+		fmt.Sprintf("%+.2f", openData.Change),
+		fmt.Sprintf("%.2f", closeData.Index),
+		fmt.Sprintf("%+.2f", closeData.Change),
+		fmt.Sprintf("%s %.2f points", sessionPerf, sessionDiff),
+	)
+	if err != nil {
+		log.Printf("Error loading closing prompt template: %v", err)
+		return fmt.Sprintf(`
+### Close Set
+* Close Index: %.2f (%+.2f)
 
-Opening: %.2f (%+.2f)
-Closing: %.2f (%+.2f)
-Session: %s %.2f points
+### Close Summary
+<p>Session analysis temporarily unavailable.</p>
 
-Provide concise analysis covering:
-- Session performance and sentiment
-- Key market drivers
-- Technical outlook
-- Brief recommendations
-
-IMPORTANT: Write the analysis in ENGLISH language only.
-Keep under 200 words, format as 3-4 short paragraphs for Thai investors.`,
-		sessionType, date, openData.Index, openData.Change, closeData.Index, closeData.Change, sessionPerf, sessionDiff)
+`, closeData.Index, closeData.Change)
+	}
 
 	// Get AI-generated comparative analysis
 	aiAnalysis, err := h.callGeminiAI(prompt)

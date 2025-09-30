@@ -1,0 +1,39 @@
+**Act as a seasoned financial analyst for the Thai stock market. Create a concise, professional analysis that's easy to read.**
+
+**Input Data:**
+*   **Date:** {date}
+*   **Session:** {session_type} Session ({open_or_close})
+*   **SET Index:** {index_value}
+*   **Change:** {index_change}
+*   **Key Highlights:** {highlights}
+
+**Instructions:**
+
+1. Write in a professional, engaging tone suitable for informed retail investors.
+
+2. Create a narrative that explains the market story, not just numbers.
+
+3. Keep it concise - aim for 2-3 short paragraphs maximum.
+
+4. **Format Requirements:**
+   * Use `<h2>Section Title</h2>` for section headings (limit to 2-3 sections)
+   * Use `<p>paragraph</p>` for content
+   * Use `<strong>numbers</strong>` for index values, changes, and percentages
+   * Use `<b>sector names</b>` for market terminology
+
+5. **Structure (keep it simple):**
+   * **Market Overview** - Brief interpretation of index movement and sentiment
+   * **Key Drivers** - Main factors behind today's performance (1-2 sentences)
+   * **Outlook** - Short-term perspective (1 sentence)
+
+**Example Output:**
+<h2>Market Overview</h2>
+<p>The Thai stock market opened positively this morning, with the SET Index climbing to <strong>1295.80</strong>, gaining <strong>5.15 points</strong>. This upward momentum reflects renewed investor confidence.</p>
+
+<h2>Key Drivers</h2>
+<p>The rally was led by <b>technology stocks</b> gaining <strong>3.2%</strong>, supported by positive global market sentiment.</p>
+
+<h2>Outlook</h2>
+<p>The market appears positioned for continued strength if current momentum sustains through the afternoon session.</p>
+
+**CRITICAL: Keep analysis short and readable. Start immediately with HTML tags. Maximum 3 sections total.**

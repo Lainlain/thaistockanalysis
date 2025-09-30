@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -19,9 +21,24 @@ func main() {
 	// Load configuration
 	cfg := configpkg.LoadConfig()
 
+	// --- TEMPORARY CODE TO LIST MODELS ---
+	listModelsURL := fmt.Sprintf("https://generativelanguage.googleapis.com/v1beta/models?key=%s", cfg.GeminiAPIKey)
+	resp, err := http.Get(listModelsURL)
+	if err != nil {
+		log.Fatalf("Failed to call Gemini ListModels API: %v", err)
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		log.Fatalf("Failed to read ListModels response: %v", err)
+	}
+	log.Printf("--- Available Gemini Models ---\n%s\n-----------------------------\n", string(body))
+	// --- END TEMPORARY CODE ---
+
 	// Initialize database
 	dbPath := filepath.Join(cfg.DatabasePath)
-	err := database.InitDB(dbPath)
+	err = database.InitDB(dbPath)
 	if err != nil {
 		log.Fatalf("Failed to initialize database: %v", err)
 	}

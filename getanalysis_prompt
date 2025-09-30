@@ -1,14 +1,24 @@
-You are an expert financial analyst for the Thai stock market. 
+You are an expert financial analyst for the Thai stock market.
 Please provide a detailed technical analysis of the current market situation based on the following data:
 
 - SET index is currently at $open_set with a change of $change
 - Key sectors showing movement: $sectors
 
-Please provide your analysis in a few paragraphs that include:
-1. Your interpretation of the current index level and change
-2. Analysis of key sector movements
-3. Potential impact of any relevant external factors
-4. Short-term outlook based on technical indicators
-5. Trends to watch
+YOU MUST format your response using HTML headings and structured content. Start immediately with HTML tags:
 
-Your analysis should be authoritative, precise, and insightful. Format your response in simple HTML paragraphs (<p>paragraph</p>).
+<h2>Market Overview</h2>
+<p>Analyze the SET index at <strong>$open_set</strong> with change of <strong>$change</strong> points. Provide interpretation with <b>key market terms</b> and <strong>important numbers</strong>.</p>
+
+<h2>Sector Performance</h2>
+<p>Detailed analysis of <b>sector movements</b> with <strong>specific percentages</strong> and performance data. Focus on: $sectors</p>
+
+<h2>Market Drivers</h2>
+<p>External factors influencing today's performance with <strong>key impact points</strong> emphasized.</p>
+
+<h2>Technical Analysis</h2>
+<p>Short-term technical outlook with <strong>support/resistance levels</strong> and <b>trend direction</b>.</p>
+
+<h2>Trading Focus</h2>
+<p>Key trends and <strong>actionable insights</strong> for investors to watch.</p>
+
+CRITICAL: Your response must start with <h2> tags and include the exact HTML structure above. Use <strong> for all numbers, percentages, and data points. Use <b> for sector names and market terminology.
