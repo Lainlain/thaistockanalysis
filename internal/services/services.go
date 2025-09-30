@@ -33,15 +33,24 @@ var (
 )
 
 // MardownService handles markdown file parsing and caching
-type MarkdownService struct{}
+type MarkdownService struct{
+	cacheExpiry time.Duration
+}
 
 // NewMarkdownService creates a new markdown service
-func NewMarkdownService() *MarkdownService {
-	return &MarkdownService{}
+func NewMarkdownService(cacheExpiryMinutes int) *MarkdownService {
+	return &MarkdownService{
+		cacheExpiry: time.Duration(cacheExpiryMinutes) * time.Minute,
+	}
 }
 
 // GetCachedStockData retrieves stock data from cache or parses if not cached
 func (ms *MarkdownService) GetCachedStockData(filePath string) (models.StockData, error) {
+	// If cache is disabled (0 minutes), always parse fresh
+	if ms.cacheExpiry == 0 {
+		return ms.ParseMarkdownArticle(filePath)
+	}
+
 	cacheMutex.RLock()
 	if data, exists := markdownCache[filePath]; exists {
 		if expiry, hasExpiry := cacheExpiry[filePath]; hasExpiry {
@@ -61,7 +70,7 @@ func (ms *MarkdownService) GetCachedStockData(filePath string) (models.StockData
 
 	cacheMutex.Lock()
 	markdownCache[filePath] = data
-	cacheExpiry[filePath] = time.Now().Add(5 * time.Minute) // Cache for 5 minutes
+	cacheExpiry[filePath] = time.Now().Add(ms.cacheExpiry)
 	cacheMutex.Unlock()
 
 	return data, nil

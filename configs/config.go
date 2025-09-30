@@ -29,7 +29,7 @@ func LoadConfig() *Config {
 		TemplateDir:      getEnv("TEMPLATE_DIR", "web/templates"),
 		StaticDir:        getEnv("STATIC_DIR", "web/static"),
 		DebugMode:        getEnvBool("DEBUG_MODE", false),
-		CacheExpiry:      getEnvInt("CACHE_EXPIRY", 5),
+		CacheExpiry:      getEnvInt("CACHE_EXPIRY", 0),
 		GeminiAPIKey:     getEnv("GEMINI_API_KEY", "AIzaSyBkw_fi16Q39yjZdZ0C3PTw-vuADTR-KAM"),
 		TelegramBotToken: getEnv("TELEGRAM_BOT_TOKEN", "7912088515:AAFn3YbnE-84MmMgvhoc6vpJ5HiLPtH5IEg"),
 		TelegramChannel:  getEnv("TELEGRAM_CHANNEL", "-1002240874831"),

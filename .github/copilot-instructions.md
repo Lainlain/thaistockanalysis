@@ -61,9 +61,11 @@ Configure via environment variables or defaults in `configs/config.go`:
 - `STATIC_DIR=web/static`
 - `DEBUG_MODE=false`
 - `CACHE_EXPIRY=5` (minutes)
-- `GEMINI_API_KEY` (for AI analysis)
-- `TELEGRAM_BOT_TOKEN` (for notifications)
-- `TELEGRAM_CHANNEL` (target channel ID)
+- `GEMINI_API_KEY` (for AI analysis, has hardcoded default)
+- `TELEGRAM_BOT_TOKEN` (for notifications, has hardcoded default)
+- `TELEGRAM_CHANNEL` (target channel ID, has hardcoded default)
+
+**Security Note**: Production deployments should override API keys via environment variables.
 
 ### Docker Deployment
 ```bash
@@ -101,8 +103,12 @@ docker-compose up -d
 
 ### Debugging and Development
 - **Debug Files**: `debug_parser.go` and `debug_template.go` for standalone testing
-- **Server Logs**: Multiple log files (`server.log`, `server_test.log`) for troubleshooting
+- **Server Logs**: Multiple log files (`server.log`, `server_test.log`, `server_clean.log`) for troubleshooting
 - **Market Data Testing**: `test_new_format.go` for validating parsing logic
+- **Article Backup**: `articles_backup_*/` directories contain historical data for testing
+- **Standalone Testing**: Root-level test files (`test_server.log`, `test_template.go`) for component isolation
+- **Article Backup**: `articles_backup_*/` directories contain historical data for testing
+- **Standalone Testing**: Root-level test files (`test_server.log`, `test_template.go`) for component isolation
 
 ## 5. Integration Points
 

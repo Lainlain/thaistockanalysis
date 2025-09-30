@@ -1,15 +1,14 @@
 package main
-package main
 
 import (
 	"html/template"
-	"log"
+	"testing"
 )
 
-func main() {
+func TestTemplateParsing(t *testing.T) {
 	_, err := template.ParseFiles("web/templates/base.gohtml", "web/templates/index.gohtml")
 	if err != nil {
-		log.Fatal("Template parsing error:", err)
+		t.Fatalf("Template parsing error: %v", err)
 	}
-	log.Println("Templates parsed successfully")
+	t.Log("Templates parsed successfully")
 }

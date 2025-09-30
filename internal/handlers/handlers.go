@@ -33,7 +33,7 @@ type Handler struct {
 // NewHandler creates a new handler with dependencies
 func NewHandler(articlesDir, templateDir string, cfg *config.Config) *Handler {
 	return &Handler{
-		MarkdownService: services.NewMarkdownService(),
+		MarkdownService: services.NewMarkdownService(cfg.CacheExpiry),
 		TemplateService: services.NewTemplateService(),
 		TelegramService: services.NewTelegramService(cfg.TelegramBotToken, cfg.TelegramChannel),
 		ArticlesDir:     articlesDir,
@@ -747,6 +747,12 @@ func (h *Handler) generateAnalysisWithGemini(req MarketDataAnalysisRequest) stri
 		session = req.AfternoonOpen
 	}
 
+	// Check if session data is available
+	if session == nil {
+		log.Printf("Error: No session data provided for %s", req.Date)
+		return "No market data available for analysis."
+	}
+
 	// Create detailed prompt for Gemini AI
 	prompt := fmt.Sprintf(`Generate a concise Thai stock market analysis for %s session on %s:
 
@@ -979,13 +985,15 @@ Each takeaway should be concise but informative, focusing on actionable insights
 `, aiTakeaways)
 }
 
-// saveAnalysisToFile saves generated analysis to markdown file
+// saveAnalysisToFile saves generated analysis to markdown file and creates database entry
 func (h *Handler) saveAnalysisToFile(date, content string) error {
 	filename := fmt.Sprintf("%s/%s.md", h.ArticlesDir, date)
 
 	// Check if file exists
 	var err error
+	var isNewFile bool
 	if _, statErr := os.Stat(filename); os.IsNotExist(statErr) {
+		isNewFile = true
 		// New file - add main title first
 		parsedDate, _ := time.Parse("2006-01-02", date)
 		finalContent := fmt.Sprintf("# Stock Market Analysis - %s\n\n%s", parsedDate.Format("2 January 2006"), content)
@@ -1006,13 +1014,39 @@ func (h *Handler) saveAnalysisToFile(date, content string) error {
 		return fmt.Errorf("failed to write content: %v", err)
 	}
 
+	// Create database entry for new files
+	if isNewFile {
+		parsedDate, _ := time.Parse("2006-01-02", date)
+		title := fmt.Sprintf("Stock Market Analysis - %s", parsedDate.Format("2 January 2006"))
+		summary := "Thai stock market analysis including SET index movements, sector highlights, and key insights."
+
+		// Check if article already exists in database
+		exists, err := database.ArticleExists(date)
+		if err != nil {
+			log.Printf("Error checking if article exists in database: %v", err)
+		} else if !exists {
+			// Create database entry
+			if err := database.CreateArticle(date, title, summary, ""); err != nil {
+				log.Printf("Error creating database entry for %s: %v", date, err)
+			} else {
+				log.Printf("📊 Database entry created for %s", date)
+			}
+		}
+	}
+
 	log.Printf("📝 Analysis saved to %s", filename)
 	return nil
 }
 
-// saveSummaryToFile saves generated summary to markdown file
+// saveSummaryToFile saves generated summary to markdown file and creates database entry
 func (h *Handler) saveSummaryToFile(date, content string) error {
 	filename := fmt.Sprintf("%s/%s.md", h.ArticlesDir, date)
+
+	// Check if file exists before opening
+	var isNewFile bool
+	if _, statErr := os.Stat(filename); os.IsNotExist(statErr) {
+		isNewFile = true
+	}
 
 	file, err := os.OpenFile(filename, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0644)
 	if err != nil {
@@ -1023,6 +1057,26 @@ func (h *Handler) saveSummaryToFile(date, content string) error {
 	_, err = file.WriteString(content)
 	if err != nil {
 		return fmt.Errorf("failed to write content: %v", err)
+	}
+
+	// Create database entry for new files
+	if isNewFile {
+		parsedDate, _ := time.Parse("2006-01-02", date)
+		title := fmt.Sprintf("Stock Market Analysis - %s", parsedDate.Format("2 January 2006"))
+		summary := "Thai stock market analysis including SET index movements, sector highlights, and key insights."
+
+		// Check if article already exists in database
+		exists, err := database.ArticleExists(date)
+		if err != nil {
+			log.Printf("Error checking if article exists in database: %v", err)
+		} else if !exists {
+			// Create database entry
+			if err := database.CreateArticle(date, title, summary, ""); err != nil {
+				log.Printf("Error creating database entry for %s: %v", date, err)
+			} else {
+				log.Printf("📊 Database entry created for %s", date)
+			}
+		}
 	}
 
 	log.Printf("📝 Summary saved to %s", filename)
