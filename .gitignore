@@ -118,3 +118,14 @@ testdata/
 # Application specific
 articles/*.backup
 web/static/uploads/
+
+
+// ...existing code...
+# Ignore SQLite database files
+/data/*.db
+data/*.db
+
+# Ignore article markdown files
+/articles/*.md
+articles/*.md
+# ...existing code...
