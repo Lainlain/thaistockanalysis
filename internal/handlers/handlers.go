@@ -899,6 +899,9 @@ func (h *Handler) generateAnalysisWithGemini(req MarketDataAnalysisRequest) stri
 		aiAnalysis = "Market analysis indicates mixed sentiment with selective sector rotation and cautious investor positioning."
 	}
 
+	// ✅ Clean up AI response - remove markdown code blocks
+	aiAnalysis = h.cleanGeminiResponse(aiAnalysis)
+
 	// Send Telegram notification after successful Gemini analysis
 	openIndex := fmt.Sprintf("%.2f", session.Index)
 	change := fmt.Sprintf("%+.2f", session.Change)
@@ -1001,6 +1004,25 @@ func (h *Handler) generateSummaryWithGemini(req MarketDataCloseRequest) string {
 	return content.String()
 }
 
+// cleanGeminiResponse removes markdown code blocks and unwanted formatting from Gemini AI responses
+func (h *Handler) cleanGeminiResponse(response string) string {
+	// Remove markdown code blocks like ```html, ```markdown, ```, etc.
+	// Pattern 1: ```html ... ``` or ```markdown ... ```
+	response = strings.ReplaceAll(response, "```html", "")
+	response = strings.ReplaceAll(response, "```markdown", "")
+	response = strings.ReplaceAll(response, "```", "")
+
+	// Remove excessive newlines (more than 2 consecutive)
+	for strings.Contains(response, "\n\n\n") {
+		response = strings.ReplaceAll(response, "\n\n\n", "\n\n")
+	}
+
+	// Trim leading/trailing whitespace
+	response = strings.TrimSpace(response)
+
+	return response
+}
+
 // generateSessionClose generates closing data for a specific session
 func (h *Handler) generateSessionClose(sessionType, date string, closeData *MarketSession) string {
 	// Get corresponding opening data from file
@@ -1054,6 +1076,9 @@ func (h *Handler) generateSessionClose(sessionType, date string, closeData *Mark
 		aiAnalysis = "Professional market analysis temporarily unavailable. Session data suggests mixed market conditions with intraday volatility."
 	}
 
+	// ✅ Clean up AI response - remove markdown code blocks (```html, ```, etc.)
+	aiAnalysis = h.cleanGeminiResponse(aiAnalysis)
+
 	closeSection := fmt.Sprintf(`
 ### Close Set
 * Close Index: %.2f (%+.2f)
@@ -1103,6 +1128,9 @@ Each takeaway should be concise but informative, focusing on actionable insights
 		log.Printf("Error generating key takeaways: %v", err)
 		aiTakeaways = "- Market performance reflected mixed sentiment with selective sector rotation\n- Trading patterns indicated institutional positioning for upcoming developments\n- Technical indicators suggest continued monitoring of key support and resistance levels"
 	}
+
+	// ✅ Clean up AI response - remove markdown code blocks
+	aiTakeaways = h.cleanGeminiResponse(aiTakeaways)
 
 	return fmt.Sprintf(`
 ## Key Takeaways
@@ -1173,20 +1201,20 @@ func (h *Handler) saveAnalysisToFile(date, content string) error {
 func (h *Handler) replaceClosingSection(existingContent, newClosingContent string) string {
 	// Determine which session we're updating
 	isMorningClose := strings.Contains(strings.ToLower(newClosingContent), "morning")
-	
+
 	if isMorningClose {
 		// Morning close: Insert after "### Open Analysis" section
 		// Look for the pattern: ## Morning Session ... ### Open Analysis ... [content] ... (insert here before ## Afternoon or end)
-		
+
 		// Check if morning close already exists
 		if strings.Contains(existingContent, "## Morning Session") && strings.Contains(existingContent, "### Close Set") {
 			// Find morning session section
 			morningStart := strings.Index(existingContent, "## Morning Session")
 			afternoonStart := strings.Index(existingContent, "## Afternoon Session")
-			
+
 			var morningSection string
 			var afterMorning string
-			
+
 			if afternoonStart > morningStart && afternoonStart != -1 {
 				morningSection = existingContent[morningStart:afternoonStart]
 				afterMorning = existingContent[afternoonStart:]
@@ -1194,18 +1222,18 @@ func (h *Handler) replaceClosingSection(existingContent, newClosingContent strin
 				morningSection = existingContent[morningStart:]
 				afterMorning = ""
 			}
-			
+
 			// Check if Close Set exists in morning section
 			if strings.Contains(morningSection, "### Close Set") {
 				// Replace existing close section
 				closeStart := strings.Index(morningSection, "### Close Set")
 				beforeClose := morningSection[:closeStart]
-				
+
 				// Reconstruct: before close + new close + afternoon (if exists)
 				return existingContent[:morningStart] + beforeClose + newClosingContent + "\n" + afterMorning
 			}
 		}
-		
+
 		// No existing close section - append to morning session
 		if strings.Contains(existingContent, "## Morning Session") {
 			afternoonIdx := strings.Index(existingContent, "## Afternoon Session")
@@ -1217,22 +1245,22 @@ func (h *Handler) replaceClosingSection(existingContent, newClosingContent strin
 				return existingContent + "\n" + newClosingContent
 			}
 		}
-		
+
 		// No morning session exists - append to end
 		return existingContent + "\n## Morning Session\n" + newClosingContent
-		
+
 	} else {
 		// Afternoon close: Insert after "### Open Analysis" in afternoon section or at end
-		
+
 		// Check if afternoon close already exists
 		if strings.Contains(existingContent, "## Afternoon Session") && strings.LastIndex(existingContent, "### Close Set") > strings.Index(existingContent, "## Afternoon Session") {
 			// Find afternoon session
 			afternoonStart := strings.Index(existingContent, "## Afternoon Session")
 			keyTakeawaysStart := strings.Index(existingContent, "## Key Takeaways")
-			
+
 			var afternoonSection string
 			var afterAfternoon string
-			
+
 			if keyTakeawaysStart > afternoonStart && keyTakeawaysStart != -1 {
 				afternoonSection = existingContent[afternoonStart:keyTakeawaysStart]
 				afterAfternoon = existingContent[keyTakeawaysStart:]
@@ -1240,18 +1268,18 @@ func (h *Handler) replaceClosingSection(existingContent, newClosingContent strin
 				afternoonSection = existingContent[afternoonStart:]
 				afterAfternoon = ""
 			}
-			
+
 			// Check if Close Set exists in afternoon section
 			if strings.Contains(afternoonSection, "### Close Set") {
 				// Replace existing close section in afternoon
 				closeStart := strings.Index(afternoonSection, "### Close Set")
 				beforeClose := afternoonSection[:closeStart]
-				
+
 				// Reconstruct
 				return existingContent[:afternoonStart] + beforeClose + newClosingContent + "\n" + afterAfternoon
 			}
 		}
-		
+
 		// No existing afternoon close - append
 		if strings.Contains(existingContent, "## Afternoon Session") {
 			keyTakeawaysIdx := strings.Index(existingContent, "## Key Takeaways")
@@ -1263,7 +1291,7 @@ func (h *Handler) replaceClosingSection(existingContent, newClosingContent strin
 				return existingContent + "\n" + newClosingContent
 			}
 		}
-		
+
 		// No afternoon session exists - append to end
 		return existingContent + "\n## Afternoon Session\n" + newClosingContent
 	}

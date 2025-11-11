@@ -1,7 +1,7 @@
 # Cache Fix - Website Not Showing Updated Data
 
-**Date**: November 11, 2025  
-**Status**: ✅ FIXED  
+**Date**: November 11, 2025
+**Status**: ✅ FIXED
 **Issue**: API returns success but website doesn't show updated data
 
 ---
@@ -12,7 +12,7 @@ User reported:
 ```bash
 curl -X POST http://localhost:7777/api/market-data-close \
   -d '{"date": "2025-11-11", "morning_close": {"index": 1281.04, "change": -1.50}}'
-  
+
 # Response: {"status":"success","message":"Summary generated and saved successfully"}
 # But website at http://localhost:7777 shows NO updated data!
 ```
@@ -43,14 +43,14 @@ var markdownCache = make(map[string]models.StockData)
 ### Fix #1: Simplified Section Replacement
 **File**: `internal/handlers/handlers.go` (Line ~1172)
 
-**Before**: 100+ lines of complex line-by-line parsing  
+**Before**: 100+ lines of complex line-by-line parsing
 **After**: Simple string-based find-and-replace logic
 
 **New Logic**:
 ```go
 func (h *Handler) replaceClosingSection(existingContent, newClosingContent string) string {
     isMorningClose := strings.Contains(strings.ToLower(newClosingContent), "morning")
-    
+
     if isMorningClose {
         // Find "## Morning Session" and "## Afternoon Session"
         // Insert closing data BETWEEN them
@@ -98,7 +98,7 @@ log.Printf("🔄 Cache cleared for %s", filename)
 // Write file...
 err = os.WriteFile(filename, []byte(finalContent), 0644)
 
-// ✅ NEW: Clear cache immediately  
+// ✅ NEW: Clear cache immediately
 h.MarkdownService.ClearCache(filename)
 log.Printf("🔄 Cache cleared for %s", filename)
 ```
@@ -237,7 +237,7 @@ You're using: **`gemini-2.0-flash-lite-001`**
 - **Location**: `internal/handlers/handlers.go` line 582
 - **Version**: v1beta (Google's experimental endpoint)
 - **Speed**: Fastest Gemini model available
-- **Token Limits**: 
+- **Token Limits**:
   - Input: 1,048,576 tokens
   - Output: 8,192 tokens
 - **Endpoint**: `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite-001:generateContent`
@@ -274,8 +274,8 @@ Current choice (`2.0-flash-lite-001`) is **perfect for real-time market analysis
 
 ## 📝 Summary
 
-**Problem**: Morning close data not showing on website  
-**Cause 1**: Complex section replacement logic failing silently  
-**Cause 2**: Cache not being cleared after file updates  
-**Solution**: Simplified replacement logic + added cache clearing  
+**Problem**: Morning close data not showing on website
+**Cause 1**: Complex section replacement logic failing silently
+**Cause 2**: Cache not being cleared after file updates
+**Solution**: Simplified replacement logic + added cache clearing
 **Result**: Website now shows updates immediately! ✅

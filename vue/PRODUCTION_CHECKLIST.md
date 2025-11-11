@@ -327,16 +327,16 @@ Record after first deployment:
 
 ### Common Issues & Solutions
 
-**Issue**: 404 on refresh (e.g., `/article/2025-09-30`)  
+**Issue**: 404 on refresh (e.g., `/article/2025-09-30`)
 **Fix**: Ensure `try_files $uri /index.html` is in Nginx config
 
-**Issue**: CORS errors in browser console  
+**Issue**: CORS errors in browser console
 **Fix**: Add `Access-Control-Allow-Origin` header in Go backend
 
-**Issue**: API calls return 502 Bad Gateway  
+**Issue**: API calls return 502 Bad Gateway
 **Fix**: Check Go backend is running: `sudo systemctl status thaistockanalysis`
 
-**Issue**: SSL certificate error  
+**Issue**: SSL certificate error
 **Fix**: Verify certificate paths in Nginx config, renew if expired
 
 ---

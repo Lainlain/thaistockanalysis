@@ -1,7 +1,10 @@
 import axios from 'axios'
 
+// Use environment variable or default to production URL
+const BASE_URL = import.meta.env.VITE_API_URL || 'https://thaistockanalysis.com/api'
+
 const api = axios.create({
-	baseURL: '/api',
+	baseURL: BASE_URL,
 	headers: {
 		'Content-Type': 'application/json'
 	}

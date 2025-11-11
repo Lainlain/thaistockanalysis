@@ -1,5 +1,5 @@
 # ThaiStockAnalysis - Changes Summary
-**Date:** November 11, 2025  
+**Date:** November 11, 2025
 **Purpose:** Mobile-optimized Vue Admin Panel + API Integration + Production Readiness
 
 ---
@@ -93,7 +93,7 @@ mux.HandleFunc("/admin/", func(w http.ResponseWriter, r *http.Request) {
 })
 ```
 
-**Reason**: 
+**Reason**:
 - Old HTML admin interface disabled for production
 - All admin functionality moved to Vue app (port 3000)
 - Public visitors accessing `/admin` are redirected to homepage (301)
@@ -107,9 +107,9 @@ These endpoints remain unchanged and continue to work:
 ### 4. Bug Fixes in Go Backend
 
 #### HTML Rendering Fix (`internal/services/services.go`)
-**Issue**: Raw HTML tags (`<p>`, `</p>`) visible in Close Summary sections  
-**Root Cause**: Double-processing HTML content with `markdown.ToHTML()`  
-**Solution**: 
+**Issue**: Raw HTML tags (`<p>`, `</p>`) visible in Close Summary sections
+**Root Cause**: Double-processing HTML content with `markdown.ToHTML()`
+**Solution**:
 ```go
 // Before (incorrect):
 MorningCloseSummary: template.HTML(markdown.ToHTML([]byte(*summaryContent)))
@@ -117,10 +117,10 @@ MorningCloseSummary: template.HTML(markdown.ToHTML([]byte(*summaryContent)))
 // After (correct):
 MorningCloseSummary: template.HTML(*summaryContent)
 ```
-**Files Changed**: 
+**Files Changed**:
 - Lines ~176, ~193, ~219, ~236 in `parseMorningSession()` and `parseAfternoonSession()`
 
-**Impact**: 
+**Impact**:
 - ✅ Close Summary sections now render properly formatted HTML
 - ✅ No more AdSense policy violations from visible HTML tags
 
@@ -294,7 +294,7 @@ export default defineConfig({
 })
 ```
 
-**Development**: Proxies `/api/*` requests from port 3000 to production domain  
+**Development**: Proxies `/api/*` requests from port 3000 to production domain
 **Production**: Build static files and serve via nginx/reverse proxy
 
 ---
@@ -471,7 +471,7 @@ cd vue && npm run dev
 
 ### Frontend
 - **Initial Load**: < 1s with Vite HMR in development
-- **Production Build**: 
+- **Production Build**:
   - Minified JS: ~200KB (including Vue + Vue Router + Axios)
   - CSS: ~10KB (Tailwind purged)
   - Total: ~210KB gzipped
@@ -603,6 +603,6 @@ cd vue && npm run dev
 
 ---
 
-**Last Updated**: November 11, 2025  
-**Author**: GitHub Copilot  
+**Last Updated**: November 11, 2025
+**Author**: GitHub Copilot
 **Project Status**: ✅ Production Ready

@@ -1,7 +1,7 @@
 # Bug Fix: Morning Close Data Going to Afternoon Close
 
-**Date**: November 11, 2025  
-**Status**: ✅ Fixed  
+**Date**: November 11, 2025
+**Status**: ✅ Fixed
 **Severity**: High - Data routing bug
 
 ---
@@ -26,7 +26,7 @@ POST /api/market-data-close
 }
 ```
 
-**Before Fix**: Data would append to end of file (wrong section)  
+**Before Fix**: Data would append to end of file (wrong section)
 **After Fix**: Data replaces `### Close Set` in Morning Session (correct)
 
 ---
@@ -84,13 +84,13 @@ This code used **append mode** which always adds to the end of the file, regardl
 ```go
 func (h *Handler) saveSummaryToFile(date, content string) error {
     filename := fmt.Sprintf("%s/%s.md", h.ArticlesDir, date)
-    
+
     file, err := os.OpenFile(filename, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0644)
     if err != nil {
         return fmt.Errorf("failed to open file: %v", err)
     }
     defer file.Close()
-    
+
     _, err = file.WriteString(content)  // ⚠️ Bug here!
     return err
 }
@@ -100,13 +100,13 @@ func (h *Handler) saveSummaryToFile(date, content string) error {
 ```go
 func (h *Handler) saveSummaryToFile(date, content string) error {
     filename := fmt.Sprintf("%s/%s.md", h.ArticlesDir, date)
-    
+
     // Read existing content
     existingContent, err := os.ReadFile(filename)
     if err != nil && !os.IsNotExist(err) {
         return fmt.Errorf("failed to read file: %v", err)
     }
-    
+
     var finalContent string
     if isNewFile {
         finalContent = content
@@ -114,7 +114,7 @@ func (h *Handler) saveSummaryToFile(date, content string) error {
         // ✅ Intelligently replace correct section
         finalContent = h.replaceClosingSection(string(existingContent), content)
     }
-    
+
     // Write complete updated file
     err = os.WriteFile(filename, []byte(finalContent), 0644)
     return err
@@ -251,8 +251,8 @@ docker-compose up -d
 
 ## ✅ Status
 
-**Fixed**: November 11, 2025  
-**Tested**: ✅ Compiles successfully  
+**Fixed**: November 11, 2025
+**Tested**: ✅ Compiles successfully
 **Deploy**: Ready for production
 
 ---

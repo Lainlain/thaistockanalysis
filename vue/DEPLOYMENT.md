@@ -551,6 +551,6 @@ Before deploying to production:
 
 ---
 
-**Last Updated**: 2025-01-XX  
-**Maintainer**: ThaiStockAnalysis Development Team  
+**Last Updated**: 2025-01-XX
+**Maintainer**: ThaiStockAnalysis Development Team
 **License**: Private - Internal Use Only

@@ -353,7 +353,7 @@ See DEPLOYMENT.md Section: "Troubleshooting" for common issues and solutions.
 
 ---
 
-**Last Updated**: 2025-01-XX  
-**Production Domain**: https://thaistockanalysis.com  
-**Admin Panel Domain**: https://admin.thaistockanalysis.com (recommended)  
+**Last Updated**: 2025-01-XX
+**Production Domain**: https://thaistockanalysis.com
+**Admin Panel Domain**: https://admin.thaistockanalysis.com (recommended)
 **Status**: ✅ Production Ready (pending security configuration)

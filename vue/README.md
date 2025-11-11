@@ -49,12 +49,12 @@ Output: `dist/` folder ready for deployment
 ## 📱 Features
 
 ### Mobile Optimization
-✅ **Touch-Friendly**: 44px minimum touch targets  
-✅ **Vertical Layout**: No horizontal scrolling  
-✅ **Readable Text**: Optimized font hierarchy (xl → sm → xs)  
-✅ **Full-Width Buttons**: Easy tapping with `w-full` buttons  
-✅ **3-Row Textareas**: No horizontal scroll for long highlights  
-✅ **Active Feedback**: `active:bg-gray-100` for tactile response  
+✅ **Touch-Friendly**: 44px minimum touch targets
+✅ **Vertical Layout**: No horizontal scrolling
+✅ **Readable Text**: Optimized font hierarchy (xl → sm → xs)
+✅ **Full-Width Buttons**: Easy tapping with `w-full` buttons
+✅ **3-Row Textareas**: No horizontal scroll for long highlights
+✅ **Active Feedback**: `active:bg-gray-100` for tactile response
 
 ### Trading Sessions Management
 Manage **four distinct trading periods** per day:
@@ -184,23 +184,23 @@ vue/
 ## 🐛 Troubleshooting
 
 ### "Failed to load articles"
-**Cause**: Backend not running or CORS issue.  
-**Fix**: 
+**Cause**: Backend not running or CORS issue.
+**Fix**:
 1. Ensure Go server is running on port 7777
 2. Check browser console for errors
 3. Verify `/api/articles` endpoint returns JSON
 
 ### Blank page on refresh
-**Cause**: SPA routing requires server fallback.  
+**Cause**: SPA routing requires server fallback.
 **Fix**: Configure Nginx with `try_files $uri /index.html`
 
 ### Horizontal scroll on textareas
-**Cause**: Default browser styling.  
+**Cause**: Default browser styling.
 **Fix**: Already fixed with `resize-none` class in components
 
 ### "npm run dev" fails
-**Cause**: Missing dependencies.  
-**Fix**: 
+**Cause**: Missing dependencies.
+**Fix**:
 ```bash
 rm -rf node_modules package-lock.json
 npm install
@@ -298,14 +298,14 @@ Before deploying:
 
 ## � Support
 
-**Issues**: Check `DEPLOYMENT.md` troubleshooting section  
-**Backend Logs**: Check Go server stdout or systemd journal  
+**Issues**: Check `DEPLOYMENT.md` troubleshooting section
+**Backend Logs**: Check Go server stdout or systemd journal
 **Frontend Errors**: Browser console (F12)
 
 ---
 
-**Version**: 1.0.0  
-**Last Updated**: 2025-01-XX  
-**Production URL**: https://thaistockanalysis.com  
+**Version**: 1.0.0
+**Last Updated**: 2025-01-XX
+**Production URL**: https://thaistockanalysis.com
 **License**: Private - Internal Use Only
 

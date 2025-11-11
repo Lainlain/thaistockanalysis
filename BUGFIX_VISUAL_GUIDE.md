@@ -187,8 +187,8 @@ Write complete updated file
 ### How does it know which section to update?
 
 ```go
-isMorningClose := strings.Contains(newClosingContent, "### Close Set") && 
-    (strings.Contains(strings.ToLower(newClosingContent), "morning") || 
+isMorningClose := strings.Contains(newClosingContent, "### Close Set") &&
+    (strings.Contains(strings.ToLower(newClosingContent), "morning") ||
      !strings.Contains(strings.ToLower(newClosingContent), "afternoon"))
 ```
 
@@ -283,5 +283,5 @@ func (h *Handler) saveSummaryToFile(date, content string) error {
 
 ---
 
-**Status**: ✅ **FIXED AND TESTED**  
+**Status**: ✅ **FIXED AND TESTED**
 **Deploy**: Ready for production
