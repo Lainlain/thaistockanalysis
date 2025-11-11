@@ -52,7 +52,7 @@
 <script>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import axios from 'axios'
+import { articleAPI } from '../services/api'
 
 export default {
   name: 'ArticleList',
@@ -68,7 +68,7 @@ export default {
         error.value = null
 
         // Fetch articles from the API endpoint
-        const response = await axios.get('/api/articles')
+        const response = await articleAPI.getArticles()
 
         articles.value = response.data
       } catch (err) {

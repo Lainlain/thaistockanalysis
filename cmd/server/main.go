@@ -53,6 +53,24 @@ func main() {
 	// Create HTTP server
 	mux := http.NewServeMux()
 
+	// CORS middleware wrapper
+	corsHandler := func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// Allow requests from Vue admin panels (dev and production build)
+			w.Header().Set("Access-Control-Allow-Origin", "*")
+			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+			
+			// Handle preflight requests
+			if r.Method == "OPTIONS" {
+				w.WriteHeader(http.StatusOK)
+				return
+			}
+			
+			next.ServeHTTP(w, r)
+		})
+	}
+
 	// Serve static files
 	mux.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir(cfg.StaticDir))))
 
@@ -85,10 +103,10 @@ func main() {
 	mux.HandleFunc("/terms", h.TermsHandler)
 	mux.HandleFunc("/disclaimer", h.DisclaimerHandler)
 
-	// Create server with timeouts
+	// Create server with timeouts and CORS
 	server := &http.Server{
 		Addr:         ":" + cfg.Port,
-		Handler:      mux,
+		Handler:      corsHandler(mux), // Wrap with CORS middleware
 		ReadTimeout:  15 * time.Second,
 		WriteTimeout: 15 * time.Second,
 		IdleTimeout:  60 * time.Second,

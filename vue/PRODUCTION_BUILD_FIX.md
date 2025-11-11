@@ -369,7 +369,7 @@ curl -X GET https://thaistockanalysis.com/api/articles
 
 ## ✅ Status
 
-**Fixed**: ✅ Production build now works correctly  
+**Fixed**: ✅ Production build now works correctly
 **Changes**:
 1. ✅ Environment-based API URL
 2. ✅ `.env.development` and `.env.production` files
