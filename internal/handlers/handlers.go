@@ -578,8 +578,8 @@ func (h *Handler) callGeminiAI(prompt string) (string, error) {
 		return "", fmt.Errorf("failed to marshal request: %v", err)
 	}
 
-	// Make API call with retry logic - using the v1beta gemini-2.5-flash model
-	url := fmt.Sprintf("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=%s", apiKey)
+	// Make API call with retry logic - using the v1beta gemini-2.0-flash-lite-001 model (faster)
+	url := fmt.Sprintf("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite-001:generateContent?key=%s", apiKey)
 
 	var resp *http.Response
 	var body []byte

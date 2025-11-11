@@ -1332,8 +1332,8 @@ func generateGeminiAnalysis(openIndex, openChange float64, highlights string) (s
 		return "", err
 	}
 
-	// Use gemini-2.5-pro with optimized timeout
-	url := fmt.Sprintf("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=%s", GEMINI_API_KEY)
+	// Use gemini-2.0-flash-lite-001 for faster responses with optimized timeout
+	url := fmt.Sprintf("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite-001:generateContent?key=%s", GEMINI_API_KEY)
 
 	client := &http.Client{
 		Timeout: 30 * time.Second,
