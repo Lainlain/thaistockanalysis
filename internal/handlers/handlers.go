@@ -1141,6 +1141,10 @@ func (h *Handler) saveAnalysisToFile(date, content string) error {
 		return fmt.Errorf("failed to write content: %v", err)
 	}
 
+	// ✅ CRITICAL: Clear cache so website shows updated data immediately
+	h.MarkdownService.ClearCache(filename)
+	log.Printf("🔄 Cache cleared for %s", filename)
+
 	// Create database entry for new files
 	if isNewFile {
 		parsedDate, _ := time.Parse("2006-01-02", date)
@@ -1165,6 +1169,106 @@ func (h *Handler) saveAnalysisToFile(date, content string) error {
 	return nil
 }
 
+// replaceClosingSection intelligently replaces or appends the correct closing section in markdown content
+func (h *Handler) replaceClosingSection(existingContent, newClosingContent string) string {
+	// Determine which session we're updating
+	isMorningClose := strings.Contains(strings.ToLower(newClosingContent), "morning")
+	
+	if isMorningClose {
+		// Morning close: Insert after "### Open Analysis" section
+		// Look for the pattern: ## Morning Session ... ### Open Analysis ... [content] ... (insert here before ## Afternoon or end)
+		
+		// Check if morning close already exists
+		if strings.Contains(existingContent, "## Morning Session") && strings.Contains(existingContent, "### Close Set") {
+			// Find morning session section
+			morningStart := strings.Index(existingContent, "## Morning Session")
+			afternoonStart := strings.Index(existingContent, "## Afternoon Session")
+			
+			var morningSection string
+			var afterMorning string
+			
+			if afternoonStart > morningStart && afternoonStart != -1 {
+				morningSection = existingContent[morningStart:afternoonStart]
+				afterMorning = existingContent[afternoonStart:]
+			} else {
+				morningSection = existingContent[morningStart:]
+				afterMorning = ""
+			}
+			
+			// Check if Close Set exists in morning section
+			if strings.Contains(morningSection, "### Close Set") {
+				// Replace existing close section
+				closeStart := strings.Index(morningSection, "### Close Set")
+				beforeClose := morningSection[:closeStart]
+				
+				// Reconstruct: before close + new close + afternoon (if exists)
+				return existingContent[:morningStart] + beforeClose + newClosingContent + "\n" + afterMorning
+			}
+		}
+		
+		// No existing close section - append to morning session
+		if strings.Contains(existingContent, "## Morning Session") {
+			afternoonIdx := strings.Index(existingContent, "## Afternoon Session")
+			if afternoonIdx != -1 {
+				// Insert before afternoon session
+				return existingContent[:afternoonIdx] + "\n" + newClosingContent + "\n" + existingContent[afternoonIdx:]
+			} else {
+				// Append to end
+				return existingContent + "\n" + newClosingContent
+			}
+		}
+		
+		// No morning session exists - append to end
+		return existingContent + "\n## Morning Session\n" + newClosingContent
+		
+	} else {
+		// Afternoon close: Insert after "### Open Analysis" in afternoon section or at end
+		
+		// Check if afternoon close already exists
+		if strings.Contains(existingContent, "## Afternoon Session") && strings.LastIndex(existingContent, "### Close Set") > strings.Index(existingContent, "## Afternoon Session") {
+			// Find afternoon session
+			afternoonStart := strings.Index(existingContent, "## Afternoon Session")
+			keyTakeawaysStart := strings.Index(existingContent, "## Key Takeaways")
+			
+			var afternoonSection string
+			var afterAfternoon string
+			
+			if keyTakeawaysStart > afternoonStart && keyTakeawaysStart != -1 {
+				afternoonSection = existingContent[afternoonStart:keyTakeawaysStart]
+				afterAfternoon = existingContent[keyTakeawaysStart:]
+			} else {
+				afternoonSection = existingContent[afternoonStart:]
+				afterAfternoon = ""
+			}
+			
+			// Check if Close Set exists in afternoon section
+			if strings.Contains(afternoonSection, "### Close Set") {
+				// Replace existing close section in afternoon
+				closeStart := strings.Index(afternoonSection, "### Close Set")
+				beforeClose := afternoonSection[:closeStart]
+				
+				// Reconstruct
+				return existingContent[:afternoonStart] + beforeClose + newClosingContent + "\n" + afterAfternoon
+			}
+		}
+		
+		// No existing afternoon close - append
+		if strings.Contains(existingContent, "## Afternoon Session") {
+			keyTakeawaysIdx := strings.Index(existingContent, "## Key Takeaways")
+			if keyTakeawaysIdx != -1 {
+				// Insert before Key Takeaways
+				return existingContent[:keyTakeawaysIdx] + "\n" + newClosingContent + "\n" + existingContent[keyTakeawaysIdx:]
+			} else {
+				// Append to end
+				return existingContent + "\n" + newClosingContent
+			}
+		}
+		
+		// No afternoon session exists - append to end
+		return existingContent + "\n## Afternoon Session\n" + newClosingContent
+	}
+}
+
 // saveSummaryToFile saves generated summary to markdown file and creates database entry
 func (h *Handler) saveSummaryToFile(date, content string) error {
 	filename := fmt.Sprintf("%s/%s.md", h.ArticlesDir, date)
@@ -1175,16 +1279,30 @@ func (h *Handler) saveSummaryToFile(date, content string) error {
 		isNewFile = true
 	}
 
-	file, err := os.OpenFile(filename, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0644)
-	if err != nil {
-		return fmt.Errorf("failed to open file: %v", err)
+	// Read existing file content first
+	existingContent, err := os.ReadFile(filename)
+	if err != nil && !os.IsNotExist(err) {
+		return fmt.Errorf("failed to read file: %v", err)
 	}
-	defer file.Close()
 
-	_, err = file.WriteString(content)
+	var finalContent string
+	if isNewFile {
+		// New file - just use the content as is
+		finalContent = content
+	} else {
+		// Existing file - need to intelligently insert/replace the closing section
+		finalContent = h.replaceClosingSection(string(existingContent), content)
+	}
+
+	// Write the updated content
+	err = os.WriteFile(filename, []byte(finalContent), 0644)
 	if err != nil {
 		return fmt.Errorf("failed to write content: %v", err)
 	}
+
+	// ✅ CRITICAL: Clear cache so website shows updated data immediately
+	h.MarkdownService.ClearCache(filename)
+	log.Printf("🔄 Cache cleared for %s", filename)
 
 	// Create database entry for new files
 	if isNewFile {
