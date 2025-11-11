@@ -7,8 +7,9 @@ export default defineConfig({
 		port: 3000,
 		proxy: {
 			'/api': {
-				target: 'http://localhost:7777',
-				changeOrigin: true
+				target: process.env.VITE_API_URL || 'https://thaistockanalysis.com',
+				changeOrigin: true,
+				secure: true
 			}
 		}
 	}

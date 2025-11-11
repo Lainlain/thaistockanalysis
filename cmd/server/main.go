@@ -59,10 +59,14 @@ func main() {
 	// Routes
 	mux.HandleFunc("/", h.IndexHandler)
 	mux.HandleFunc("/articles/", h.ArticleHandler)
-	// Admin routes disabled - use Vue admin panel on port 3000
-	// mux.HandleFunc("/admin", h.AdminDashboardHandler)
-	// mux.HandleFunc("/admin/", h.AdminDashboardHandler)
-	// mux.HandleFunc("/admin/articles/new", h.AdminArticleFormHandler)
+	
+	// Redirect admin routes to homepage - use Vue admin panel on port 3000 instead
+	mux.HandleFunc("/admin", func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "/", http.StatusMovedPermanently)
+	})
+	mux.HandleFunc("/admin/", func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "/", http.StatusMovedPermanently)
+	})
 
 	// About page
 	mux.HandleFunc("/about", h.AboutHandler)
