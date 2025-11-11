@@ -1,0 +1,78 @@
+/*
+ * Thai Stock Analysis - Vue Admin Panel
+ * Custom styles for enhanced UI experience
+ */
+
+/* Animation for loading spinner */
+@keyframes spin {
+	from {
+		transform: rotate(0deg);
+	}
+
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+/* Smooth transitions for all interactive elements */
+* {
+	transition: all 0.2s ease-in-out;
+}
+
+/* Custom focus styles for accessibility */
+input:focus,
+button:focus,
+select:focus,
+textarea:focus {
+	outline: 2px solid #3b82f6;
+	outline-offset: 2px;
+}
+
+/* Hover effect for article cards */
+.article-card:hover {
+	transform: translateY(-2px);
+	box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+/* Success message animation */
+.success-message {
+	animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+	from {
+		opacity: 0;
+		transform: translateY(-10px);
+	}
+
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+/* Number input styling */
+input[type="number"] {
+	-moz-appearance: textfield;
+}
+
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+	-webkit-appearance: none;
+	margin: 0;
+}
+
+/* Button disabled state */
+button:disabled {
+	cursor: not-allowed;
+	opacity: 0.6;
+}
+
+/* Date input custom styling */
+input[type="date"] {
+	position: relative;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+	cursor: pointer;
+}

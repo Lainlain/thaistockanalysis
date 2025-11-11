@@ -4,140 +4,206 @@ This document provides essential knowledge for AI coding agents to be immediatel
 
 ## 1. Big Picture Architecture
 
-The application is a high-performance Go web server providing Thai stock market analysis with a **dual architecture**:
+This is a high-performance Go web server for Thai stock market analysis with a **dual architecture**:
 
 - **Modern Modular Architecture** (`cmd/server/main.go`): Clean separation of concerns with proper dependency injection
-- **Legacy Monolithic Architecture** (`src/main.go`): Original implementation with all logic centralized (2,300+ lines)
+- **Legacy Monolithic Architecture** (`src/main.go`): Original 2,342-line implementation (avoid for new features)
 
-**Current Recommended Entry Point**: `cmd/server/main.go` with modular structure
+**ALWAYS use `cmd/server/main.go` entry point** - the modular structure with handlers, services, database, and models layers.
 
-**Core Technologies:**
-- **Language**: Go 1.24.6 with `net/http` routing (no external router frameworks)
-- **Database**: SQLite via `github.com/mattn/go-sqlite3` (requires CGO), located at `data/admin.db`
-- **Templates**: Go's `html/template` with Tailwind CSS in `web/templates/`
-- **Caching**: Thread-safe template/markdown caches with configurable expiry (default: disabled with 0 minutes)
-- **Article Storage**: Dual system (markdown files in `articles/` + SQLite metadata)
-- **External APIs**: Google Gemini AI (`gemini-2.0-flash-lite-001` via v1beta endpoint) for fast market analysis, Telegram Bot for notifications
-- **Markdown Rendering**: `github.com/gomarkdown/markdown` for HTML conversion
+**Core Tech Stack:**
+- Go 1.24.6 with stdlib `net/http` (no external routers)
+- SQLite via `github.com/mattn/go-sqlite3` (**CGO required** - build with `CGO_ENABLED=1`)
+- Go `html/template` + Tailwind CSS for frontend
+- Dual storage: Markdown files (`articles/*.md`) + SQLite metadata (`data/admin.db`)
+- Google Gemini AI `gemini-2.0-flash-lite-001` (v1beta endpoint) for market analysis with retry logic
+- Telegram Bot for notifications
 
-## 2. Key Components and Data Flow
+## 2. Critical Data Structures & Parsing Logic
 
-### Modern Architecture (`cmd/server/main.go`)
-- **Entry Point**: `cmd/server/main.go` - Clean server initialization with graceful shutdown via `context.Context`
-- **Handlers**: `internal/handlers/handlers.go` (1,212 lines) - HTTP request handling with `Handler` struct containing all services
-- **Services**:
-  - `internal/services/services.go` (419 lines) - `MarkdownService`, `TemplateService`
-  - `internal/services/prompt_service.go` - `PromptService` for AI prompt generation from `highlights_for_prompt.json`
-- **Database**: `internal/database/database.go` - SQLite operations with auto-migration and `AddMissingArticlesToDB()` sync
-- **Models**: `internal/models/models.go` - Data structures (`StockData`, `ArticlePreview`, `DBArticle`, `IndexPageData`)
-- **Config**: `configs/config.go` - Environment-based configuration with sensible defaults
+### StockData Model (4 Sessions)
+Each trading day has **four distinct session states** parsed from markdown:
+- **Morning Open**: Index, Change, Highlights, Analysis (template.HTML)
+- **Morning Close**: Index, Change, Highlights, Summary (template.HTML)
+- **Afternoon Open**: Index, Change, Highlights, Analysis (template.HTML)
+- **Afternoon Close**: Index, Change, Highlights, Summary (template.HTML)
 
-### Specialized Data Structures & Parsing
-- **StockData**: Four distinct session states (Morning Open/Close, Afternoon Open/Close) each with:
-  - Index value (float64), Change value (float64), Highlights (string), Analysis/Summary (template.HTML)
-- **ArticlePreview**: Homepage summary with `SetIndex`, `Change`, `ShortSummary`, `Slug` for listings
-- **Markdown Structure**: Hierarchical parsing of `## Morning/Afternoon Session` → `### Open/Close Set` → bullet points
-- **Index Parsing**: Regex `(\d+\.?\d*)\s*\(([+-]?\d+\.?\d*)\)` extracts index and change from "1295.80 (+5.15)" format
-- **Highlight Conversion**: `PromptService.GenerateHighlightNarrative()` converts numeric highlights to human-readable narrative using last digit as JSON key
+### Markdown Parsing Convention (internal/services/services.go:80-160)
+The parser expects this **exact structure** in `articles/YYYY-MM-DD.md`:
+```markdown
+# Stock Market Analysis - 30 September 2025
 
-## 3. Critical Developer Workflows
+## Morning Session
+### Open Set
+* Open Index: 1302.75 (+16.49)
+* Highlights: Energy firms rally eight points as oil prices spike.
+### Open Analysis
+<p>HTML analysis content...</p>
+### Close Set
+* Close Index: 1280.38 (-7.69)
+### Close Summary
+<p>Summary content...</p>
+
+## Afternoon Session
+### Open Set
+* Open Index: 1279.48 (-8.59)
+* Highlights: **+94 +97 +90...**
+### Open Analysis
+<p>Analysis...</p>
+```
+
+**Parser supports dual formats**: Old (`### Open Set`) and new (`### Market Opening Data`) for backwards compatibility.
+
+### Index Value Extraction
+Regex pattern: `(\d+\.?\d*)\s*\(([+-]?\d+\.?\d*)\)` parses "1295.80 (+5.15)" → index: 1295.80, change: +5.15
+
+### Highlight Number-to-Narrative Conversion
+`PromptService.GenerateHighlightNarrative()` converts raw numbers like "+68 +61 +64" to human-readable sector insights:
+1. Extract **first number** from highlights string
+2. Use **last digit** as key in `highlights_for_prompt.json`
+3. Randomly select phrase from mapped array
+4. Example: "+68" → last digit "8" → "Energy sector rallies eight points on rising oil futures."
+
+## 3. Developer Workflows
 
 ### Running the Application
 ```bash
-# Modern architecture (recommended)
+# Recommended: Modern modular architecture
 go run cmd/server/main.go
 
-# Legacy architecture (still functional)
-go run src/main.go
+# Access points:
+# - Homepage: http://localhost:7777
+# - Admin: http://localhost:7777/admin
+# - API: http://localhost:7777/api/market-data-analysis
 ```
 
-### VS Code Tasks (Pre-configured)
-- **"Run Go Server"**: Background server execution
-- **"Build Binary"**: Creates `bin/thaistockanalysis` executable
-- **"Test All"** & **"Test with Coverage"**: Full test suite execution
-- **"Docker Build"** & **"Docker Run"**: Containerized deployment
+### VS Code Tasks (Use These, Not Manual Commands)
+- **"Run Go Server"** (`isBackground: true`) - Use for development server
+- **"Build Binary"** - Creates `bin/thaistockanalysis` executable
+- **"Test All"** / **"Test with Coverage"** - Run full test suite
+- **"Docker Build"** / **"Docker Run"** - Containerized deployment with nginx reverse proxy
 
-### Environment Configuration
-Configure via environment variables or defaults in `configs/config.go`:
-- `PORT=7777` (default, changed from 8080)
-- `DATABASE_PATH=data/admin.db`
-- `ARTICLES_DIR=articles`
-- `TEMPLATE_DIR=web/templates`
-- `STATIC_DIR=web/static`
-- `DEBUG_MODE=false`
-- `CACHE_EXPIRY=0` (minutes, 0 = disabled for fresh parsing on every request)
-- `GEMINI_API_KEY` (for AI analysis, has hardcoded default - **CHANGE IN PRODUCTION**)
-- `TELEGRAM_BOT_TOKEN` (for notifications, has hardcoded default - **CHANGE IN PRODUCTION**)
-- `TELEGRAM_CHANNEL` (target channel ID, has hardcoded default - **CHANGE IN PRODUCTION**)
+### Environment Configuration Pattern
+All config in `configs/config.go` with **environment variable overrides**:
+```go
+config := &Config{
+    Port:             getEnv("PORT", "7777"),
+    CacheExpiry:      getEnvInt("CACHE_EXPIRY", 0), // 0 = disabled
+    GeminiAPIKey:     getEnv("GEMINI_API_KEY", "AIzaSy..."), // ⚠️ Hardcoded default
+}
+```
 
-**Security Warning**: The codebase contains hardcoded API keys in `configs/config.go`. Production deployments MUST override via environment variables.
+**Security Critical**: `GEMINI_API_KEY`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHANNEL` have hardcoded defaults. Production **MUST** override via environment variables.
 
-### Docker Deployment
+### Docker Deployment with CGO
+Multi-stage Dockerfile handles SQLite's CGO requirement:
 ```bash
-# Multi-stage build with SQLite support
-docker build -t thaistockanalysis .
-docker-compose up -d
+docker build -t thaistockanalysis .     # Uses alpine + gcc/musl-dev
+docker-compose up -d                     # Includes nginx, backup service
 ```
 
-## 4. Project-Specific Conventions
+## 4. Project-Specific Patterns
 
-### Article Management
-- **File Format**: `articles/YYYY-MM-DD.md` (e.g., `2025-09-26.md`)
-- **Auto-Sync**: `database.AddMissingArticlesToDB()` syncs filesystem to database on startup
-- **Admin Interface**: `/admin` for CRUD operations, auto-generates structured markdown
+### Article Lifecycle & Filesystem Sync
+1. Articles stored as `articles/YYYY-MM-DD.md` (e.g., `2025-09-30.md`)
+2. On server startup: `database.AddMissingArticlesToDB(cfg.ArticlesDir)` auto-syncs filesystem → SQLite
+3. Database stores metadata only (slug, title, summary) - **not full markdown content**
+4. Homepage queries database for performance (avoids parsing all markdown files)
+5. Article detail page parses markdown on-demand via `MarkdownService.GetCachedStockData()`
 
-### Markdown Structure (Critical for Parsing)
-```markdown
-# Stock Market Analysis - DD Month YYYY
-## Morning Session
-### Open Set
-* Open Index: 1295.80 (+5.15)
-* Highlights: **Sector info**
-### Open Analysis
-<p>HTML analysis content</p>
-## Afternoon Session
-### Open Set
-* Open Index: 1287.01 (-4.47)
+### Caching Strategy (Thread-Safe)
+```go
+// Global caches in internal/services/services.go
+var (
+    markdownCache = make(map[string]models.StockData) // Protected by cacheMutex
+    templateCache = make(map[string]*template.Template) // Protected by templateMutex
+)
 ```
 
-### Caching Strategy
-- **Template Cache**: `sync.RWMutex` protected, global scope in `services.go`
-- **Markdown Cache**: Configurable expiry (default: 0 = disabled) with `sync.RWMutex` protection
-- **Cache Bypass**: When `CACHE_EXPIRY=0`, `GetCachedStockData()` always calls `ParseMarkdownArticle()` for fresh data
-- **Cache Management**: `ClearCache(filePath)` for targeted invalidation
-- **Performance**: Homepage uses database-only queries to avoid filesystem I/O on article listings
+**Cache Expiry Behavior** (`CACHE_EXPIRY` in minutes):
+- `0` (default): Cache **disabled**, always parses fresh markdown
+- `>0`: Cache enabled with TTL, check expiry before returning cached data
+- Clear cache: `MarkdownService.ClearCache(filePath)` for targeted invalidation
 
-### Debugging and Development
-- **Debug Files**: `debug_parser.go` and `debug_template.go` for standalone testing
-- **Server Logs**: Multiple log files (`server.log`, `server_test.log`, `server_clean.log`) for troubleshooting
-- **Market Data Testing**: `test_new_format.go` for validating parsing logic
-- **Article Backup**: `articles_backup_*/` directories contain historical data for testing
-- **Standalone Testing**: Root-level test files (`test_server.log`, `test_template.go`) for component isolation
-- **Article Backup**: `articles_backup_*/` directories contain historical data for testing
-- **Standalone Testing**: Root-level test files (`test_server.log`, `test_template.go`) for component isolation
+### Gemini AI Integration Pattern (handlers.go:558-646)
+**Retry logic with fallback**:
+1. Attempt API call with `gemini-2.0-flash-lite-001` model (faster than standard)
+2. On failure (network, 429 rate limit, quota): Retry up to 2 times with 15s/25s delays
+3. Final fallback: `generateMockGeminiResponse()` creates data-driven mock from prompt content
+4. **Never throws errors** - always returns usable content for article generation
 
-## 5. Integration Points
+API Request Structure:
+```go
+POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite-001:generateContent?key={apiKey}
+{
+  "contents": [{"role": "user", "parts": [{"text": "{prompt}"}]}]
+}
+```
 
-### Dependencies (`go.mod`)
-- `github.com/gomarkdown/markdown`: Markdown to HTML conversion
-- `github.com/mattn/go-sqlite3`: SQLite database driver (requires CGO)
+### API Endpoints for Market Data
+**`POST /api/market-data-analysis`**: Updates opening data (morning/afternoon)
+**`POST /api/market-data-close`**: Updates closing data with session summary
+Both endpoints:
+1. Load existing markdown file for the date
+2. Generate AI analysis via Gemini
+3. Update specific session section
+4. Write back to `articles/YYYY-MM-DD.md`
+5. Send Telegram notification
 
-### API Endpoints
-- `/api/market-data-analysis`: Gemini AI-powered market analysis
-- `/api/market-data-close`: Market closing data processing
-- `/admin/articles/new`: Structured article creation form
+See `docs/API_QUICK_REFERENCE.md` for curl examples.
 
-### Static Assets
-- **Location**: `web/static/` (modern) or `src/static/` (legacy)
-- **Tailwind CSS**: Pre-built styles in `/static/css/`
-- **Responsive Design**: Mobile-first approach with card layouts
+## 5. Critical Integration Points
 
-### Development vs Production
-- **Debug Mode**: Environment variable `DEBUG_MODE=true`
-- **Database**: Auto-migration and seeding on startup
-- **Port**: Default 7777 (changed from 8080)
-- **Docker**: Production-ready with health checks and volume mounts
+### Template Function Map (services.go:290+)
+Custom functions available in all templates:
+```go
+funcMap := template.FuncMap{
+    "printf":         fmt.Sprintf,
+    "html":           func(s string) template.HTML { return template.HTML(s) },
+    "add":            func(a, b int) int { return a + b },
+    "markdownToHTML": func(s string) template.HTML {...},
+}
+```
+
+### Database Auto-Migration (database.go:15-60)
+On `InitDB()`:
+1. Creates `data/` directory if missing
+2. Creates `articles` table with schema
+3. Checks for `content` column, adds via `ALTER TABLE` if missing
+4. Seeds with sample articles if empty
+5. **Does NOT delete existing data**
+
+### HTTP Handler Initialization Pattern
+All handlers require full service injection:
+```go
+h := handlers.NewHandler(cfg.ArticlesDir, cfg.TemplateDir, cfg)
+// h.MarkdownService, h.TemplateService, h.PromptService, h.Config all initialized
+```
+
+### Static Assets Routing
+```go
+mux.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir(cfg.StaticDir))))
+// Serves: web/static/css/*.css, web/static/js/*.js, web/static/*.png
+```
+
+## 6. Debugging & Testing
+
+### Debug Artifacts in Repository
+- `debug_parser.go`, `debug_template.go` - Standalone component testing
+- `test_new_format.go` - Validates markdown parsing logic
+- `server*.log` files - Various troubleshooting logs (git-ignored recommended)
+- `articles_backup_*/` - Historical data for regression testing
+
+### Common Build Issues
+**Problem**: `undefined reference to sqlite3_*`
+**Solution**: Ensure `CGO_ENABLED=1` and gcc installed: `go build -tags=cgo`
+
+**Problem**: Template not updating after changes
+**Solution**: Clear template cache or restart server (cache is global variable)
+
+**Problem**: Article parsing fails silently
+**Solution**: Check markdown structure matches exact format in section 2 (especially `### Open Set` vs `### Open Analysis`)
 
 ---
 
-**Architecture Migration Note**: When making changes, prefer the modular architecture in `cmd/server/` over the legacy `src/main.go` approach.
+**Architecture Rule**: Always extend the modular `cmd/server/` structure. The `src/main.go` legacy code is for reference only.

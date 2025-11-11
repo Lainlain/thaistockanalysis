@@ -1209,3 +1209,100 @@ func (h *Handler) saveSummaryToFile(date, content string) error {
 	log.Printf("📝 Summary saved to %s", filename)
 	return nil
 }
+
+// ArticlesAPIHandler returns articles as JSON for Vue frontend
+func (h *Handler) ArticlesAPIHandler(w http.ResponseWriter, r *http.Request) {
+	// Get articles from database
+	articles, err := database.GetArticles(50)
+	if err != nil {
+		http.Error(w, "Internal Server Error", 500)
+		return
+	}
+
+	// Convert to response format with actual market data
+	var response []map[string]interface{}
+	for _, article := range articles {
+		// Parse markdown file to get actual market data
+		markdownPath := fmt.Sprintf("%s/%s.md", h.ArticlesDir, article.Slug)
+		var setIndex string = "--"
+		var change float64 = 0.0
+
+		if stockData, err := h.MarkdownService.GetCachedStockData(markdownPath); err == nil {
+			// Use the most recent close index available
+			if stockData.AfternoonCloseIndex > 0 {
+				setIndex = fmt.Sprintf("%.2f", stockData.AfternoonCloseIndex)
+				change = stockData.AfternoonCloseChange
+			} else if stockData.MorningCloseIndex > 0 {
+				setIndex = fmt.Sprintf("%.2f", stockData.MorningCloseIndex)
+				change = stockData.MorningCloseChange
+			} else if stockData.AfternoonOpenIndex > 0 {
+				setIndex = fmt.Sprintf("%.2f", stockData.AfternoonOpenIndex)
+				change = stockData.AfternoonOpenChange
+			} else if stockData.MorningOpenIndex > 0 {
+				setIndex = fmt.Sprintf("%.2f", stockData.MorningOpenIndex)
+				change = stockData.MorningOpenChange
+			}
+		}
+
+		summary := ""
+		if article.Summary.Valid {
+			summary = article.Summary.String
+		}
+
+		response = append(response, map[string]interface{}{
+			"slug":    article.Slug,
+			"title":   article.Title,
+			"summary": summary,
+			"date":    article.CreatedAt,
+			"index":   setIndex,
+			"change":  change,
+		})
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+}
+
+// ArticleAPIHandler returns a single article's data as JSON
+func (h *Handler) ArticleAPIHandler(w http.ResponseWriter, r *http.Request) {
+	// Extract date from URL path (/api/articles/2025-11-11)
+	slug := strings.TrimPrefix(r.URL.Path, "/api/articles/")
+	if slug == "" {
+		http.Error(w, "Date required", 400)
+		return
+	}
+
+	// Load markdown file
+	markdownPath := fmt.Sprintf("%s/%s.md", h.ArticlesDir, slug)
+	stockData, err := h.MarkdownService.GetCachedStockData(markdownPath)
+	if err != nil {
+		http.Error(w, "Article not found", 404)
+		return
+	}
+
+	// Return structured data
+	response := map[string]interface{}{
+		"date": slug,
+		"morning_open": map[string]interface{}{
+			"index":      stockData.MorningOpenIndex,
+			"change":     stockData.MorningOpenChange,
+			"highlights": stockData.MorningOpenHighlights,
+		},
+		"morning_close": map[string]interface{}{
+			"index":  stockData.MorningCloseIndex,
+			"change": stockData.MorningCloseChange,
+		},
+		"afternoon_open": map[string]interface{}{
+			"index":      stockData.AfternoonOpenIndex,
+			"change":     stockData.AfternoonOpenChange,
+			"highlights": stockData.AfternoonOpenHighlights,
+		},
+		"afternoon_close": map[string]interface{}{
+			"index":  stockData.AfternoonCloseIndex,
+			"change": stockData.AfternoonCloseChange,
+		},
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+}

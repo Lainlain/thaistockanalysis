@@ -59,9 +59,10 @@ func main() {
 	// Routes
 	mux.HandleFunc("/", h.IndexHandler)
 	mux.HandleFunc("/articles/", h.ArticleHandler)
-	mux.HandleFunc("/admin", h.AdminDashboardHandler)
-	mux.HandleFunc("/admin/", h.AdminDashboardHandler)
-	mux.HandleFunc("/admin/articles/new", h.AdminArticleFormHandler)
+	// Admin routes disabled - use Vue admin panel on port 3000
+	// mux.HandleFunc("/admin", h.AdminDashboardHandler)
+	// mux.HandleFunc("/admin/", h.AdminDashboardHandler)
+	// mux.HandleFunc("/admin/articles/new", h.AdminArticleFormHandler)
 
 	// About page
 	mux.HandleFunc("/about", h.AboutHandler)
@@ -70,6 +71,8 @@ func main() {
 	mux.HandleFunc("/contact", h.ContactHandler)
 
 	// API endpoints for market data
+	mux.HandleFunc("/api/articles", h.ArticlesAPIHandler)
+	mux.HandleFunc("/api/articles/", h.ArticleAPIHandler)
 	mux.HandleFunc("/api/market-data-analysis", h.MarketDataAnalysisHandler)
 	mux.HandleFunc("/api/market-data-close", h.MarketDataCloseHandler)
 

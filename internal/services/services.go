@@ -174,7 +174,8 @@ func (ms *MarkdownService) parseMorningSession(line, subsection string, data *mo
 			}
 			*analysisContent += line
 			if strings.HasSuffix(line, "</p>") || (!strings.HasPrefix(line, "<") && line != "") {
-				data.MorningOpenAnalysis = template.HTML(markdown.ToHTML([]byte(*analysisContent), nil, nil))
+				// Content is already HTML, don't convert from markdown
+				data.MorningOpenAnalysis = template.HTML(*analysisContent)
 			}
 		}
 	case "close":
@@ -190,7 +191,8 @@ func (ms *MarkdownService) parseMorningSession(line, subsection string, data *mo
 			}
 			*summaryContent += line
 			if strings.HasSuffix(line, "</p>") || (!strings.HasPrefix(line, "<") && line != "") {
-				data.MorningCloseSummary = template.HTML(markdown.ToHTML([]byte(*summaryContent), nil, nil))
+				// Content is already HTML, don't convert from markdown
+				data.MorningCloseSummary = template.HTML(*summaryContent)
 			}
 		}
 	}
@@ -217,7 +219,8 @@ func (ms *MarkdownService) parseAfternoonSession(line, subsection string, data *
 			}
 			*analysisContent += line
 			if strings.HasSuffix(line, "</p>") || (!strings.HasPrefix(line, "<") && line != "") {
-				data.AfternoonOpenAnalysis = template.HTML(markdown.ToHTML([]byte(*analysisContent), nil, nil))
+				// Content is already HTML, don't convert from markdown
+				data.AfternoonOpenAnalysis = template.HTML(*analysisContent)
 			}
 		}
 	case "close":
@@ -233,7 +236,8 @@ func (ms *MarkdownService) parseAfternoonSession(line, subsection string, data *
 			}
 			*summaryContent += line
 			if strings.HasSuffix(line, "</p>") || (!strings.HasPrefix(line, "<") && line != "") {
-				data.AfternoonCloseSummary = template.HTML(markdown.ToHTML([]byte(*summaryContent), nil, nil))
+				// Content is already HTML, don't convert from markdown
+				data.AfternoonCloseSummary = template.HTML(*summaryContent)
 			}
 		}
 	}
