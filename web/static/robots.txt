@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+
+# Allow all static assets including logo
+Allow: /static/
+
+# Sitemap location
+Sitemap: https://thaistockanalysis.com/sitemap.xml
